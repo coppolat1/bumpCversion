@@ -1,10 +1,6 @@
+import os
 import re
 
-test_str = """
-#define LIBNAME_VERSION_MAJOR        (2)
-#define LIBNAME_VERSION_MINOR        (4U)
-#define LIBNAME_VERSION_PATCH        (0u)
-"""
 rAnyPreprocessorDefine = r"""
 \#define\s              # Match '#define '
 (?P<varName>[A-Z_]*)    # Capture group for pre-processor name
@@ -37,6 +33,7 @@ rPreprocessorPatch = r"""
 '''
 Utility Functions
 '''
+
 
 def ask_question(question):
     answer = input('{}: '.format(question))
@@ -75,33 +72,56 @@ def bump_revision_general(matchobj):
     return (str(retStr))
 
 
+def get_major_minor_patch_str(string):
+    # get major
+    reMajor = re.compile(rPreprocessorMajor, re.X)
+    matchMaj = reMajor.search(string)
+    majorVal = matchMaj.group('val')
+    # get minor
+    reMinor = re.compile(rPreprocessorMinor, re.X)
+    matchMin = reMinor.search(string)
+    minorVal = matchMin.group('val')
+    # get patch
+    rePatch = re.compile(rPreprocessorPatch, re.X)
+    matchPat = rePatch.search(string)
+    patchVal = matchPat.group('val')
+
+    return str(majorVal + '.' + minorVal + '.' + patchVal)
+
+
 def main():
 
-    print("Pre-bump string:  ", test_str)
-    #val = input("Bump major, minor or patch? ")
+    # Open file for reading
+    file_path = os.path.join(os.getcwd(), 'sample-input-file.h')
+    with open(file_path, 'r', errors='ignore', encoding='utf-8') as f:
+        content = f.read()
+
+    print("Pre-bump string:  ", get_major_minor_patch_str(content))
 
     options = ['Major',
                'Minor',
                'Patch',
-               'Do not update' ]
+               'Do not update']
 
     user_selected_option = ask_multiple_choice_question(
         'Which version component would you like to bump', options)
 
     if user_selected_option == 0:
         reobj = re.compile(rPreprocessorMajor, re.X)
-        rep = reobj.sub(bump_revision_general, test_str)
+        content = reobj.sub(bump_revision_general, content)
     elif user_selected_option == 1:
         reobj = re.compile(rPreprocessorMinor, re.X)
-        rep = reobj.sub(bump_revision_general, test_str)
+        content = reobj.sub(bump_revision_general, content)
     elif user_selected_option == 2:
         reobj = re.compile(rPreprocessorPatch, re.X)
-        rep = reobj.sub(bump_revision_general, test_str)
+        content = reobj.sub(bump_revision_general, content)
     else:
         print('Skipping update')
 
-
-    print('Updated version to: \n', rep)
+    # Write back to file with replaced contents
+    with open(file_path, 'w', errors='ignore', encoding='utf-8') as f:
+        f.write(content)
+    print("Post-bump string:  ", get_major_minor_patch_str(content))
 
 
 if __name__ == '__main__':
