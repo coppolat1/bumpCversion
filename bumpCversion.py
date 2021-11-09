@@ -32,17 +32,33 @@ rPreprocessorPatch = r"""
 """
 
 
-def bump_revision_general(matchobj):
+def modify_revision(matchobj, action):
     """
     Caveats:
     Assumes the following named match groups exist: varName, nSpaces, val
     and name.
     """
     currentVer = int(matchobj.group('val'))
-    retStr = "#define " + matchobj.group('varName') + matchobj.group('nSpaces') + "(" + \
-        str(currentVer + 1) + matchobj.group('unsigned') + ")"
+
+    if (action == 'zero'):
+        newVer = 0
+    elif (action == 'bump'):
+        newVer = currentVer + 1
+    else:
+        raise ValueError("Invalid 'action' parameter " + str(action))
+
+    retStr = "#define " + matchobj.group('varName') + matchobj.group('nSpaces') + \
+        "(" + str(newVer) + matchobj.group('unsigned') + ")"
 
     return (str(retStr))
+
+
+def bump_revision(matchobj):
+    return modify_revision(matchobj, 'bump')
+
+
+def zero_revision(matchobj):
+    return modify_revision(matchobj, 'zero')
 
 
 def get_major_minor_patch_str(string):
@@ -86,6 +102,12 @@ def parse_args():
         choices=['major', 'minor', 'patch'],
         help="Part of the version to be bumped (major|minor|patch)"
     )
+    parser.add_argument(
+        "--dont-reset",
+        action='store_true',
+        help=("Don't reset the patch and/or minor to zero when bumping the"
+            " major or minor versions")
+    )
     args = parser.parse_args()
 
     return args
@@ -107,14 +129,27 @@ def main():
 
     # Bump the revision based on the 'part' command line arg
     if partToBump == 'major':
+        # Bump major
         reobj = re.compile(rPreprocessorMajor, re.X)
-        content = reobj.sub(bump_revision_general, content)
+        content = reobj.sub(bump_revision, content)
+        if not (args.dont_reset):
+            # Zero minor
+            reobj = re.compile(rPreprocessorMinor, re.X)
+            content = reobj.sub(zero_revision, content)
+            # Zero patch
+            reobj = re.compile(rPreprocessorPatch, re.X)
+            content = reobj.sub(zero_revision, content)
     elif partToBump == 'minor':
+        # Bump minor
         reobj = re.compile(rPreprocessorMinor, re.X)
-        content = reobj.sub(bump_revision_general, content)
+        content = reobj.sub(bump_revision, content)
+        if not (args.dont_reset):
+            # Zero patch
+            reobj = re.compile(rPreprocessorPatch, re.X)
+            content = reobj.sub(zero_revision, content)
     elif partToBump == 'patch':
         reobj = re.compile(rPreprocessorPatch, re.X)
-        content = reobj.sub(bump_revision_general, content)
+        content = reobj.sub(bump_revision, content)
     else:
         print('Skipping update')
 
