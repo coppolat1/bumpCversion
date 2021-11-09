@@ -6,8 +6,10 @@ pre-processor version definitions.
 - [ ] How do we handle multiple files?
    - Have 'version-file' arg support multiple files?
    - Add config file
+      - One config file per repo vs. one per library/component?
       - This config file would get added to VCS and outline each library, which files to check in, etc.
       ```
+      config file:
       [bumpCversion]
       
       [group:$libname]
@@ -17,6 +19,9 @@ pre-processor version definitions.
       [group:$libname1]
       [$libname:file:$filename]
       [$libname:file:$filename1]
+
+      usage:
+      $> bumpCversion.py $libname1 major
       ```
 - [ ] Bump version number in Doxyfile also.
    - Maybe we can choose which regex to use by file extension type.
