@@ -1,5 +1,6 @@
 import os
 import re
+import argparse
 
 rAnyPreprocessorDefine = r"""
 \#define\s              # Match '#define '
@@ -29,34 +30,6 @@ rPreprocessorPatch = r"""
 (?P<val>\d+)            # Capture group for any number of digits
 (?P<unsigned>[uU]?)\)   # Capture group to capture 'U' (zero or one times) and ')'
 """
-
-'''
-Utility Functions
-'''
-
-
-def ask_question(question):
-    answer = input('{}: '.format(question))
-    return answer.strip()
-
-
-def ask_multiple_choice_question(question, choices):
-    while True:
-        print('{}?'.format(question))
-        for i in range(len(choices)):
-            print('{}. {}'.format(i, choices[i]))
-
-        try:
-            user_choice = int(ask_question('Enter Choice'))
-        except ValueError:
-            user_choice = None
-
-        if user_choice in range(len(choices)):
-            break
-        else:
-            print('Incorrect choice. Please choose a number between 0 and {}'.format(
-                len(choices) - 1))
-    return user_choice
 
 
 def bump_revision_general(matchobj):
@@ -89,38 +62,67 @@ def get_major_minor_patch_str(string):
     return str(majorVal + '.' + minorVal + '.' + patchVal)
 
 
+def extant_file(x):
+    """
+    'Type' for argparse - checks that file exists but does not open.
+    """
+    if not os.path.exists(x):
+        # Argparse uses the ArgumentTypeError to give a rejection message like:
+        # error: argument input: x does not exist
+        raise argparse.ArgumentTypeError("{0} does not exist".format(x))
+    return x
+
+
+def parse_args():
+    """ Parse arguments and return them. """
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "version_file", metavar="version-file",
+        type=extant_file,
+        help="File that contains C library version information."
+    )
+    parser.add_argument(
+        "part",
+        choices=['major', 'minor', 'patch'],
+        help="Part of the version to be bumped (major|minor|patch)"
+    )
+    args = parser.parse_args()
+
+    return args
+
+
 def main():
 
+    # Parse command line arguments
+    args = parse_args()
+    version_file = args.version_file
+    partToBump = args.part
+
     # Open file for reading
-    file_path = os.path.join(os.getcwd(), 'sample-input-file.h')
-    with open(file_path, 'r', errors='ignore', encoding='utf-8') as f:
+    with open(version_file, 'r', errors='ignore', encoding='utf-8') as f:
         content = f.read()
 
+    # Print version, before we bump it
     print("Pre-bump string:  ", get_major_minor_patch_str(content))
 
-    options = ['Major',
-               'Minor',
-               'Patch',
-               'Do not update']
-
-    user_selected_option = ask_multiple_choice_question(
-        'Which version component would you like to bump', options)
-
-    if user_selected_option == 0:
+    # Bump the revision based on the 'part' command line arg
+    if partToBump == 'major':
         reobj = re.compile(rPreprocessorMajor, re.X)
         content = reobj.sub(bump_revision_general, content)
-    elif user_selected_option == 1:
+    elif partToBump == 'minor':
         reobj = re.compile(rPreprocessorMinor, re.X)
         content = reobj.sub(bump_revision_general, content)
-    elif user_selected_option == 2:
+    elif partToBump == 'patch':
         reobj = re.compile(rPreprocessorPatch, re.X)
         content = reobj.sub(bump_revision_general, content)
     else:
         print('Skipping update')
 
     # Write back to file with replaced contents
-    with open(file_path, 'w', errors='ignore', encoding='utf-8') as f:
+    with open(version_file, 'w', errors='ignore', encoding='utf-8') as f:
         f.write(content)
+
+    # Print version, after we bump it
     print("Post-bump string:  ", get_major_minor_patch_str(content))
 
 

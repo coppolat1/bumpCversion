@@ -3,9 +3,7 @@ Development of a version bump utility to use with a C repository that uses seman
 pre-processor version definitions.
 
 ### 'To Do' List
-- [ ] How do you create an .exe from a .py file?
-- [ ] Create command line interface and add support for arguments.
-   - example: `$> bumpCversion (version_file_path) (major|minor|patch)`
+- [ ] Zero patch when minor is bumped?
 - [ ] Bump version number in Doxyfile also.
    - Maybe we can choose which regex to use by file extension type.
 - [ ] Are configuration files needed?
@@ -14,4 +12,6 @@ pre-processor version definitions.
 
 
 ### Completed Column ✓
-- [x] Completed task title  
+- [x] Completed task title
+- [x] Create command line interface and add support for arguments.
+   - example: `$> bumpCversion (version_file_path) (major|minor|patch)`
