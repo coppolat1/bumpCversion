@@ -1,11 +1,12 @@
 # bumpCversion
-Development of a version bump utility to use with a C repository that uses semantic
-pre-processor version definitions.
+Development of a version bump utility to use with a C repository that uses
+semantic pre-processor version definitions.
 
 ### 'To Do' List
 - [ ] How do we handle multiple files?
    - Have 'version-file' arg support multiple files?
    - Add config file
+      - Filename `.bump.cfg`
       - One config file per repo vs. one per library/component?
       - This config file would get added to VCS and outline each library, which files to check in, etc.
       ```

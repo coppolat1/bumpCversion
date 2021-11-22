@@ -1,6 +1,7 @@
 import os
 import re
 import argparse
+import configparser
 
 rAnyPreprocessorDefine = r"""
 \#define\s              # Match '#define '
@@ -112,6 +113,13 @@ def parse_args():
 
     return args
 
+def get_config():
+    parser = configparser.ConfigParser()
+    parser.read('.bump.cfg')
+    print ("Sections in config file: ", parser.sections())
+    print (parser.get('bumpCversion', 'group'))
+    print (parser.get('bumpCversion', 'file'))
+
 
 def main():
 
@@ -119,6 +127,8 @@ def main():
     args = parse_args()
     version_file = args.version_file
     partToBump = args.part
+
+    get_config()
 
     # Open file for reading
     with open(version_file, 'r', errors='ignore', encoding='utf-8') as f:
