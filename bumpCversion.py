@@ -113,21 +113,20 @@ def parse_args():
 
     return args
 
-def get_config():
+def get_config(config_file):
     components = [] # [0] component name, [1] path to file to bump
-    config_file_path = '.bump.cfg'
     config = configparser.ConfigParser()
-    config_file_exists = os.path.exists(config_file_path)
+    config_file_exists = os.path.exists(config_file)
 
     if not config_file_exists:
         print("Configuration does not exist!")
-        return  # return something? Refer to bump2version
+        return config_file_exists, []
 
-    config.read(config_file_path)
+    config.read(config_file)
     for section in config.sections():
         if config.has_option(section, 'filetobump'):
             components.append((section, config.get(section, 'filetobump')))
-    print (components)
+    return config_file_exists, components
 
 
 def main():
@@ -137,7 +136,7 @@ def main():
     version_file = args.version_file
     partToBump = args.part
 
-    get_config()
+    config_file_exists, component_list = get_config('.bump.cfg')
 
     # Open file for reading
     with open(version_file, 'r', errors='ignore', encoding='utf-8') as f:
