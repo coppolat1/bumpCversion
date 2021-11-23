@@ -2,7 +2,6 @@ import os
 import re
 import argparse
 import configparser
-import itertools
 
 rAnyPreprocessorDefine = r"""
 \#define\s              # Match '#define '
@@ -115,7 +114,7 @@ def parse_args():
     return args
 
 def get_config():
-    d_list = []
+    components = [] # [0] component name, [1] path to file to bump
     config_file_path = '.bump.cfg'
     config = configparser.ConfigParser()
     config_file_exists = os.path.exists(config_file_path)
@@ -125,15 +124,10 @@ def get_config():
         return  # return something? Refer to bump2version
 
     config.read(config_file_path)
-    '''
-    for section in config.sections():
-        for item in config.items(section):
-            if item[0] == 'filetobump':
-                d_list.append((section, item[1]))
-    '''
     for section in config.sections():
         if config.has_option(section, 'filetobump'):
-            d_list.append((section, config.get(section, 'filetobump')))
+            components.append((section, config.get(section, 'filetobump')))
+    print (components)
 
 
 def main():
