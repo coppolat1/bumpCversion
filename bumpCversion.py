@@ -2,6 +2,7 @@ import os
 import re
 import argparse
 import configparser
+import itertools
 
 rAnyPreprocessorDefine = r"""
 \#define\s              # Match '#define '
@@ -114,11 +115,25 @@ def parse_args():
     return args
 
 def get_config():
-    parser = configparser.ConfigParser()
-    parser.read('.bump.cfg')
-    print ("Sections in config file: ", parser.sections())
-    print (parser.get('bumpCversion', 'group'))
-    print (parser.get('bumpCversion', 'file'))
+    d_list = []
+    config_file_path = '.bump.cfg'
+    config = configparser.ConfigParser()
+    config_file_exists = os.path.exists(config_file_path)
+
+    if not config_file_exists:
+        print("Configuration does not exist!")
+        return  # return something? Refer to bump2version
+
+    config.read(config_file_path)
+    '''
+    for section in config.sections():
+        for item in config.items(section):
+            if item[0] == 'filetobump':
+                d_list.append((section, item[1]))
+    '''
+    for section in config.sections():
+        if config.has_option(section, 'filetobump'):
+            d_list.append((section, config.get(section, 'filetobump')))
 
 
 def main():
