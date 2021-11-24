@@ -11,7 +11,8 @@
          "program": "${file}",
          "console": "integratedTerminal",
          "args": [
-            "./sample-input-file.h",
+            "--config-file",
+            "./.bump.cfg",
             "major"
          ]
       }

@@ -94,9 +94,16 @@ def parse_args():
     """ Parse arguments and return them. """
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "--config-file",
+        required=False,
+        help="Config file to read from (default: .bump.cfg)",
+    )
+    parser.add_argument(
         "version_file", metavar="version-file",
+        nargs='*',
         type=extant_file,
-        help="File that contains C library version information."
+        help="File that contains C library version information",
+        #help="File to change"
     )
     parser.add_argument(
         "part",
@@ -107,17 +114,21 @@ def parse_args():
         "--dont-reset",
         action='store_true',
         help=("Don't reset the patch and/or minor to zero when bumping the"
-            " major or minor versions")
+              " major or minor versions")
     )
     args = parser.parse_args()
 
     return args
 
-def get_config(config_file):
-    components = [] # [0] component name, [1] path to file to bump
-    config = configparser.ConfigParser()
-    config_file_exists = os.path.exists(config_file)
 
+def get_config(config_file):
+    components = []  # [0] component name, [1] path to file to bump
+    config = configparser.ConfigParser()
+
+    if config_file is None:
+        return False, []
+
+    config_file_exists = os.path.exists(config_file)
     if not config_file_exists:
         print("Configuration does not exist!")
         return config_file_exists, []
@@ -135,8 +146,9 @@ def main():
     args = parse_args()
     version_file = args.version_file
     partToBump = args.part
+    configFile = args.config_file
 
-    config_file_exists, component_list = get_config('.bump.cfg')
+    config_file_exists, cfg_component_list = get_config(configFile)
 
     # Open file for reading
     with open(version_file, 'r', errors='ignore', encoding='utf-8') as f:
