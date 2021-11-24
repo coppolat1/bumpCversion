@@ -116,6 +116,11 @@ def parse_args():
         help=("Don't reset the patch and/or minor to zero when bumping the"
               " major or minor versions")
     )
+    parser.add_argument(
+        "--component",
+        required=False,
+        help="A component, defined in the config file, of which to bump"
+    )
     args = parser.parse_args()
 
     return args
@@ -138,6 +143,7 @@ def get_config(config_file):
         if config.has_option(section, 'filetobump'):
             components.append((section, config.get(section, 'filetobump')))
     return config_file_exists, components
+
 
 def replace_version_single_file(args):
     version_file = args.version_file
@@ -184,7 +190,6 @@ def replace_version_single_file(args):
     print("Post-bump string:  ", get_major_minor_patch_str(content))
 
 
-
 def main():
 
     # Parse command line arguments
@@ -195,10 +200,22 @@ def main():
     file. Therefore, we'll call the 'single_file' variety of this function.
     TODO: Consolidate these into the same function.
     '''
-    if args.version_file is not None:
+    if args.version_file:
         replace_version_single_file(args)
     else:
         config_file_exists, cfg_component_list = get_config(args.config_file)
+
+        if not config_file_exists:
+            print("Nothing to do!")
+            return
+
+        for comp in cfg_component_list:
+            if args.component == comp[0]:
+                print("Using component:", comp[0])
+
+                # Temporary hack to use this function
+                args.version_file = comp[1]
+                replace_version_single_file(args)
 
 
 if __name__ == '__main__':
