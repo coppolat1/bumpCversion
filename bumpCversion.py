@@ -139,16 +139,9 @@ def get_config(config_file):
             components.append((section, config.get(section, 'filetobump')))
     return config_file_exists, components
 
-
-def main():
-
-    # Parse command line arguments
-    args = parse_args()
+def replace_version_single_file(args):
     version_file = args.version_file
     partToBump = args.part
-    configFile = args.config_file
-
-    config_file_exists, cfg_component_list = get_config(configFile)
 
     # Open file for reading
     with open(version_file, 'r', errors='ignore', encoding='utf-8') as f:
@@ -189,6 +182,23 @@ def main():
 
     # Print version, after we bump it
     print("Post-bump string:  ", get_major_minor_patch_str(content))
+
+
+
+def main():
+
+    # Parse command line arguments
+    args = parse_args()
+
+    '''
+    If we have a single version file, passed in as an arg, there is no config
+    file. Therefore, we'll call the 'single_file' variety of this function.
+    TODO: Consolidate these into the same function.
+    '''
+    if args.version_file is not None:
+        replace_version_single_file(args)
+    else:
+        config_file_exists, cfg_component_list = get_config(args.config_file)
 
 
 if __name__ == '__main__':
