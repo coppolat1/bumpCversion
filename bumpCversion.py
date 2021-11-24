@@ -100,9 +100,10 @@ def parse_args():
     )
     parser.add_argument(
         "version_file", metavar="version-file",
-        nargs='*',
+        nargs='?',
         type=extant_file,
         help="File that contains C library version information",
+        default=None
         #help="File to change"
     )
     parser.add_argument(
@@ -146,11 +147,30 @@ def get_config(config_file):
 
 
 def replace_version_single_file(args):
-    version_file = args.version_file
+    target_file = args.version_file
     partToBump = args.part
 
+    # If a version file was specified on the CLI, use it. Otherwise,
+    # look for a configuration file.
+    if args.version_file:
+        target_file = args.version_file
+    else:
+        config_file_exists, cfg_component_list = get_config(args.config_file)
+
+        if not config_file_exists:
+            print("Nothing to do!")
+            return
+
+        for comp in cfg_component_list:
+            if args.component == comp[0]:
+                print("Using component:", comp[0])
+                # This will obviously only grab the first file.
+                # TODO: Add ability for multiple files to be handled.
+                target_file = comp[1]
+                break
+
     # Open file for reading
-    with open(version_file, 'r', errors='ignore', encoding='utf-8') as f:
+    with open(target_file, 'r', errors='ignore', encoding='utf-8') as f:
         content = f.read()
 
     # Print version, before we bump it
@@ -183,7 +203,7 @@ def replace_version_single_file(args):
         print('Skipping update')
 
     # Write back to file with replaced contents
-    with open(version_file, 'w', errors='ignore', encoding='utf-8') as f:
+    with open(target_file, 'w', errors='ignore', encoding='utf-8') as f:
         f.write(content)
 
     # Print version, after we bump it
@@ -195,27 +215,7 @@ def main():
     # Parse command line arguments
     args = parse_args()
 
-    '''
-    If we have a single version file, passed in as an arg, there is no config
-    file. Therefore, we'll call the 'single_file' variety of this function.
-    TODO: Consolidate these into the same function.
-    '''
-    if args.version_file:
-        replace_version_single_file(args)
-    else:
-        config_file_exists, cfg_component_list = get_config(args.config_file)
-
-        if not config_file_exists:
-            print("Nothing to do!")
-            return
-
-        for comp in cfg_component_list:
-            if args.component == comp[0]:
-                print("Using component:", comp[0])
-
-                # Temporary hack to use this function
-                args.version_file = comp[1]
-                replace_version_single_file(args)
+    replace_version_single_file(args)
 
 
 if __name__ == '__main__':
