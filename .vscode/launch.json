@@ -13,6 +13,8 @@
          "args": [
             "--config-file",
             "./.bump.cfg",
+            "--component",
+            "naibrd",
             "major"
          ]
       }

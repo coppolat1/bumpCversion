@@ -3,27 +3,10 @@ Development of a version bump utility to use with a C repository that uses
 semantic pre-processor version definitions.
 
 ### 'To Do' List
-- [ ] How do we handle multiple files?
-   - Have 'version-file' arg support multiple files?
-   - Add config file
-      - Filename `.bump.cfg`
-      - One config file per repo vs. one per library/component?
-      - This config file would get added to VCS and outline each library, which files to check in, etc.
-      ```
-      config file:
-      [bumpCversion]
-      
-      [group:$libname]
-      [$libname:file:$filename]
-      [$libname:file:$filename1]
-
-      [group:$libname1]
-      [$libname:file:$filename]
-      [$libname:file:$filename1]
-
-      usage:
-      $> bumpCversion.py $libname1 major
-      ```
+- [x] Add ability to specify a configuration file as an argument.
+  - [ ] Clean this up
+- [ ] Check if a config file exists in the CWD and use it.
+  - [ ] Is recursing the whole tree desirable?
 - [ ] Bump version number in Doxyfile also.
    - Maybe we can choose which regex to use by file extension type.
 - [ ] Are configuration files needed?
