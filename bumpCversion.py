@@ -2,6 +2,7 @@ import os
 import re
 import argparse
 import configparser
+from typing import NamedTuple
 
 rAnyPreprocessorDefine = r"""
 \#define\s              # Match '#define '
@@ -31,6 +32,11 @@ rPreprocessorPatch = r"""
 (?P<val>\d+)            # Capture group for any number of digits
 (?P<unsigned>[uU]?)\)   # Capture group to capture 'U' (zero or one times) and ')'
 """
+
+
+class ConfigStruct(NamedTuple):
+    name: str
+    path: str
 
 
 def modify_revision(matchobj, action):
@@ -142,7 +148,8 @@ def get_config(config_file):
     config.read(config_file)
     for section in config.sections():
         if config.has_option(section, 'filetobump'):
-            components.append((section, config.get(section, 'filetobump')))
+            components.append(ConfigStruct(section,
+                                           config.get(section, 'filetobump')))
     return config_file_exists, components
 
 
@@ -155,18 +162,18 @@ def replace_version_single_file(args):
     if args.version_file:
         target_file = args.version_file
     else:
-        config_file_exists, cfg_component_list = get_config(args.config_file)
+        config_file_exists, cfg_components = get_config(args.config_file)
 
         if not config_file_exists:
             print("Nothing to do!")
             return
 
-        for comp in cfg_component_list:
-            if args.component == comp[0]:
-                print("Using component:", comp[0])
+        for comp in cfg_components:
+            if args.component == comp.name:
+                print("Using component:", comp.name)
                 # This will obviously only grab the first file.
                 # TODO: Add ability for multiple files to be handled.
-                target_file = comp[1]
+                target_file = comp.path
                 break
 
     # Open file for reading
