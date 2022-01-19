@@ -13,6 +13,9 @@ semantic pre-processor version definitions.
 - [ ] Is support for other scripting a good feature?
    - i.e., script to check for content in 'unreleased' changelog section.
 
+### 'Should I Do' List
+- [ ] Use the 'choices' argument in parser.add_argument() to only allow the user to
+      select one of the components that it has already parsed from the config file.
 
 ### Completed Column ✓
 - [x] Completed task title
