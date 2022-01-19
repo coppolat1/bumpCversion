@@ -16,6 +16,12 @@ semantic pre-processor version definitions.
 ### 'Should I Do' List
 - [ ] Use the 'choices' argument in parser.add_argument() to only allow the user to
       select one of the components that it has already parsed from the config file.
+- Config file questions:
+  - Where should the `.bump.cfg` file live in a repository?
+    - Put it in it's own folder -> `/trunk/repo-tools/.bump.cfg`
+      - This might be the better solution, at first.
+    - Put it in source folder -> `/trunk/base/.bump.cfg`
+  - 
 
 ### Completed Column ✓
 - [x] Completed task title
