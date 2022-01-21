@@ -3,7 +3,7 @@ Development of a version bump utility to use with a C repository that uses
 semantic pre-processor version definitions.
 
 ### 'To Do' List
-- [ ] Check if a config file exists in the CWD and use it.
+- [x] Check if a config file exists in the CWD and use it.
   - [ ] Is recursing the whole tree desirable?
 - [ ] Bump version number in Doxyfile also.
    - Maybe we can choose which regex to use by file extension type.

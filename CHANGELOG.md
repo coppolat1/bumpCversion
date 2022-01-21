@@ -1,10 +1,15 @@
-# bump2version Changelog
+# bumpCversion Changelog
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog],
+and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
+None
+
+## [0.5.0] - 2022-01-20
+### Added
+- Logic to check for config file in execution directory, only if --config-file is not specified.
 
 ## [0.4.0] - 2022-01-20
 ### Changed
@@ -31,10 +36,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   preprocessor definition style version definitions
 
 
-[Unreleased]: https://github.com/coppolat1/bumpCversion/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/coppolat1/bumpCversion/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/coppolat1/bumpCversion/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/coppolat1/bumpCversion/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/coppolat1/bumpCversion/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/coppolat1/bumpCversion/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/coppolat1/bumpCversion/releases/tag/v0.1.0
+
+[Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
+[Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 <!---
 Keep a Changelog Sections
