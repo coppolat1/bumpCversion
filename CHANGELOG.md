@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2022-01-20
+### Changed
+- Build script to use nuitka instead of pyinstaller to avoid anti-virus issues.
+
 ## [0.3.0] - 2022-01-19
 ### Added
 - `bin` folder to put executables built with `pyinstaller`
