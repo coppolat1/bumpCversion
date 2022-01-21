@@ -102,7 +102,10 @@ def parse_args():
     parser.add_argument(
         "--config-file",
         required=False,
-        help="Config file to read from (default: .bump.cfg)",
+        help="Config file to read from. If this argument is not supplied \
+              the program will check for the existence of a configuration \
+              file with the name: \".bump.cfg\" in the current directory \
+              and use it",
     )
     parser.add_argument(
         "version_file", metavar="version-file",
@@ -137,8 +140,13 @@ def get_config(config_file):
     components = []  # [0] component name, [1] path to file to bump
     config = configparser.ConfigParser()
 
+    # Check for config_file argument. If it doesn't exist, check
+    # for a default configuration file in the CWD.
     if config_file is None:
-        return False, []
+        if os.path.exists('.bump.cfg'):
+            config_file = '.bump.cfg'
+        else:
+            return False, []
 
     config_file_exists = os.path.exists(config_file)
     if not config_file_exists:
@@ -154,7 +162,6 @@ def get_config(config_file):
 
 
 def replace_version_single_file(args):
-    target_file = args.version_file
     partToBump = args.part
 
     # If a version file was specified on the CLI, use it. Otherwise,

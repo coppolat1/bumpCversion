@@ -7,7 +7,7 @@
 #>
 
 Write-Host "Generating a Windows executable!" -ForegroundColor yellow
-nuitka --onefile --msvc=14.2 --remove-output .\bumpCversion.py
+nuitka --onefile --msvc=14.2 --remove-output bumpCversion.py
 
 # Create /bin dir, if it does not exist
 if (-Not (Test-Path '.\bin')) {
