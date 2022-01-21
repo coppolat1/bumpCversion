@@ -2,23 +2,20 @@
 .SYNOPSIS
    Executable generation script for bumpCversion.py
 .DESCRIPTION
-   Create executable with pyinstaller, move it to the
+   Create executable with nuitka, move it to the
    bin folder and remove build artifacts.
 #>
 
-Write-Host "Running pyinstaller!" -ForegroundColor yellow
-pyinstaller -F bumpCversion.py
+Write-Host "Generating a Windows executable!" -ForegroundColor yellow
+nuitka --onefile --msvc=14.2 --remove-output .\bumpCversion.py
 
 # Create /bin dir, if it does not exist
 if (-Not (Test-Path '.\bin')) {
    md -path '.\bin' > $null
 }
 
-Copy-Item -Path dist/bumpCversion.exe -Destination bin/
+Move-Item -Path '.\bumpCversion.exe' -Destination '.\bin' -Force
 
 # Clean up build artifacts
-Write-Host "Cleaning build artifacts" -ForegroundColor yellow
-Remove-Item .\dist               -Recurse -ErrorAction SilentlyContinue
-Remove-Item .\build              -Recurse -ErrorAction SilentlyContinue
-Remove-Item .\__pycache__\       -Recurse -ErrorAction SilentlyContinue
-Remove-Item .\bumpCversion.spec           -ErrorAction SilentlyContinue
+Write-Host "Cleaning build artifacts"  -ForegroundColor yellow
+Remove-Item '.\bumpCversion.cmd'       -ErrorAction SilentlyContinue
