@@ -7,15 +7,15 @@ and this project adheres to [Semantic Versioning].
 ## [Unreleased]
 None
 
-## [0.5.0] - 2022-01-20
+## [0.5.0] - 2022-01-21
 ### Added
 - Logic to check for config file in execution directory, only if --config-file is not specified.
 
-## [0.4.0] - 2022-01-20
+## [0.4.0] - 2022-01-21
 ### Changed
 - Build script to use nuitka instead of pyinstaller to avoid anti-virus issues.
 
-## [0.3.0] - 2022-01-19
+## [0.3.0] - 2022-01-20
 ### Added
 - `bin` folder to put executables built with `pyinstaller`
 - Build script to ease creation of tags/releases
