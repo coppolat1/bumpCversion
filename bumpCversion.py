@@ -2,42 +2,16 @@ import os
 import re
 import argparse
 import configparser
-from typing import NamedTuple
-
-rAnyPreprocessorDefine = r"""
-\#define\s              # Match '#define '
-(?P<varName>[A-Z_]*)    # Capture group for pre-processor name
-(?P<nSpaces>\s*)\(      # Capture group for spaces between name and '('
-(?P<val>\d+)            # Capture group for any number of digits
-(?P<unsigned>[uU]?)\)   # Capture group to capture 'U' (zero or one times) and ')'
-"""
-rPreprocessorMajor = r"""
-\#define\s                  # Match '#define '
-(?P<varName>[A-Z_]*MAJOR)   # Capture group for pre-processor name + 'MAJOR'
-(?P<nSpaces>\s*)\(          # Capture group for spaces between name and '('
-(?P<val>\d+)                # Capture group for any number of digits
-(?P<unsigned>[uU]?)\)       # Capture group to capture 'U' (zero or one times) and ')'
-"""
-rPreprocessorMinor = r"""
-\#define\s              # Match '#define '
-(?P<varName>[A-Z_]*MINOR)    # Capture group for pre-processor name + 'MINOR'
-(?P<nSpaces>\s*)\(      # Capture group for spaces between name and '('
-(?P<val>\d+)            # Capture group for any number of digits
-(?P<unsigned>[uU]?)\)   # Capture group to capture 'U' (zero or one times) and ')'
-"""
-rPreprocessorPatch = r"""
-\#define\s              # Match '#define '
-(?P<varName>[A-Z_]*PATCH)    # Capture group for pre-processor name + 'PATCH'
-(?P<nSpaces>\s*)\(      # Capture group for spaces between name and '('
-(?P<val>\d+)            # Capture group for any number of digits
-(?P<unsigned>[uU]?)\)   # Capture group to capture 'U' (zero or one times) and ')'
-"""
+from patterns import RegexDoxy, RegexPreProcessor
+from exceptions import DoxyException
+from typing import NamedTuple, Pattern
 
 
 class ConfigStruct(NamedTuple):
     name: str
     path: str
 
+PART_TO_BUMP = ''
 
 def modify_revision(matchobj, action):
     """
@@ -46,18 +20,57 @@ def modify_revision(matchobj, action):
     and name.
     """
     currentVer = int(matchobj.group('val'))
-
+    retStr = ''
+  
     if (action == 'zero'):
         newVer = 0
+        global PART_TO_BUMP
+        if PART_TO_BUMP == 'major':
+            PART_TO_BUMP = 'minor'
+        elif PART_TO_BUMP == 'minor':
+            PART_TO_BUMP = 'patch'
     elif (action == 'bump'):
         newVer = currentVer + 1
+        print("new: " + str(newVer))
+        print("current: " + str(currentVer))
     else:
         raise ValueError("Invalid 'action' parameter " + str(action))
 
-    retStr = "#define " + matchobj.group('varName') + matchobj.group('nSpaces') + \
+
+    try:
+        retStr = "#define " + matchobj.group('varName') + matchobj.group('nSpaces') + \
         "(" + str(newVer) + matchobj.group('unsigned') + ")"
+        return (str(retStr))
+    except IndexError:
+        print("WARNING: " + str(DoxyException(matchobj)))
+        retStr = get_doxy_str(matchobj, newVer)
+        pass
 
     return (str(retStr))
+
+
+def get_doxy_str(matchobj, newVer):
+    doxyStr = matchobj.group(0)
+    if PART_TO_BUMP == 'major':
+        temp = '=' + str(newVer) + '.'
+        reobj = re.compile(r'=\s*\d+\.', re.X)
+        retStr = reobj.sub(temp, doxyStr)
+    elif PART_TO_BUMP == 'minor':
+        temp = '.' + str(newVer) + '.'
+        reobj = re.compile(r'\.\d+\.', re.X)
+        retStr = reobj.sub(temp, doxyStr)
+    elif PART_TO_BUMP == 'patch':
+        temp = '.' + str(newVer) + '\n'
+        # reobj = re.compile(r'\.\d+(\.\d+)', re.X)
+        # #match = re.search(reobj, doxyStr)
+        # retStr = reobj.search(doxyStr)
+        # test = retStr.group(1).
+        reobj = re.compile(r'^.*?\.\d+\.', re.X)
+        retStr = reobj.search(doxyStr)
+
+        print('')
+    print(retStr)
+    return str(retStr)
 
 
 def bump_revision(matchobj):
@@ -68,20 +81,20 @@ def zero_revision(matchobj):
     return modify_revision(matchobj, 'zero')
 
 
-def get_major_minor_patch_str(string):
+def get_major_minor_patch_str(string, Patterns):
     # get major
-    reMajor = re.compile(rPreprocessorMajor, re.X)
-    matchMaj = reMajor.search(string)
-    majorVal = matchMaj.group('val')
+    matchMaj = re.search(Patterns.rMajor, string)
+    if (matchMaj != None):
+        majorVal = matchMaj.group('val')
     # get minor
-    reMinor = re.compile(rPreprocessorMinor, re.X)
-    matchMin = reMinor.search(string)
-    minorVal = matchMin.group('val')
+    matchMin = re.search(Patterns.rMinor, string)
+    if (matchMin != None):
+        minorVal = matchMin.group('val')
     # get patch
-    rePatch = re.compile(rPreprocessorPatch, re.X)
-    matchPat = rePatch.search(string)
-    patchVal = matchPat.group('val')
-
+    matchPat = re.search(Patterns.rPatch, string)
+    if (matchPat != None):
+        patchVal = matchPat.group('val')
+    
     return str(majorVal + '.' + minorVal + '.' + patchVal)
 
 
@@ -162,7 +175,9 @@ def get_config(config_file):
 
 
 def replace_version_single_file(args):
-    partToBump = args.part
+    partToBump = args.part # = major, minor, or patch
+    global PART_TO_BUMP
+    PART_TO_BUMP = partToBump
 
     # If a version file was specified on the CLI, use it. Otherwise,
     # look for a configuration file.
@@ -187,41 +202,49 @@ def replace_version_single_file(args):
     with open(target_file, 'r', errors='ignore', encoding='utf-8') as f:
         content = f.read()
 
+    # Check whether C or Doxy
+    if args.component == "doxy": 
+        Patterns = RegexDoxy()
+        print("Using Doxy")
+    else:
+        Patterns = RegexPreProcessor()
+
     # Print version, before we bump it
-    print("Pre-bump string:  ", get_major_minor_patch_str(content))
+    print("Pre-bump string:  ", get_major_minor_patch_str(content, Patterns))
 
     # Bump the revision based on the 'part' command line arg
     if partToBump == 'major':
         # Bump major
-        reobj = re.compile(rPreprocessorMajor, re.X)
+        reobj = re.compile(Patterns.rMajor, re.X)
         content = reobj.sub(bump_revision, content)
         if not (args.dont_reset):
             # Zero minor
-            reobj = re.compile(rPreprocessorMinor, re.X)
+            reobj = re.compile(Patterns.rMinor, re.X)
             content = reobj.sub(zero_revision, content)
             # Zero patch
-            reobj = re.compile(rPreprocessorPatch, re.X)
+            reobj = re.compile(Patterns.rPatch, re.X)
             content = reobj.sub(zero_revision, content)
     elif partToBump == 'minor':
         # Bump minor
-        reobj = re.compile(rPreprocessorMinor, re.X)
+        reobj = re.compile(Patterns.rMinor, re.X)
         content = reobj.sub(bump_revision, content)
         if not (args.dont_reset):
             # Zero patch
-            reobj = re.compile(rPreprocessorPatch, re.X)
+            reobj = re.compile(Patterns.rPatch, re.X)
             content = reobj.sub(zero_revision, content)
     elif partToBump == 'patch':
-        reobj = re.compile(rPreprocessorPatch, re.X)
+        reobj = re.compile(Patterns.rPatch, re.X)
         content = reobj.sub(bump_revision, content)
     else:
         print('Skipping update')
 
     # Write back to file with replaced contents
+    print(target_file)
     with open(target_file, 'w', errors='ignore', encoding='utf-8') as f:
         f.write(content)
 
     # Print version, after we bump it
-    print("Post-bump string:  ", get_major_minor_patch_str(content))
+    print("Post-bump string:  ", get_major_minor_patch_str(content, Patterns))
 
 
 def main():
