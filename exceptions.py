@@ -12,7 +12,7 @@ class BaseError(Exception):
         super().__init__()
 
     def __str__(self):
-        return "{} --> {}".format(self.val, self.message)
+        return "{} --> {}".format(self.message, self.val)
 
 
 class DoxyException(BaseError):

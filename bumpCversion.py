@@ -23,16 +23,10 @@ def modify_revision(matchobj, action):
     retStr = ''
   
     if (action == 'zero'):
+        change_bump_on_zero()
         newVer = 0
-        global PART_TO_BUMP
-        if PART_TO_BUMP == 'major':
-            PART_TO_BUMP = 'minor'
-        elif PART_TO_BUMP == 'minor':
-            PART_TO_BUMP = 'patch'
     elif (action == 'bump'):
         newVer = currentVer + 1
-        print("new: " + str(newVer))
-        print("current: " + str(currentVer))
     else:
         raise ValueError("Invalid 'action' parameter " + str(action))
 
@@ -48,6 +42,15 @@ def modify_revision(matchobj, action):
 
     return (str(retStr))
 
+def change_bump_on_zero():
+    global PART_TO_BUMP
+    if PART_TO_BUMP == 'major':
+        PART_TO_BUMP = 'minor'
+    elif PART_TO_BUMP == 'minor':
+        PART_TO_BUMP = 'patch'
+    else:
+        PART_TO_BUMP = 'patch'
+
 
 def get_doxy_str(matchobj, newVer):
     doxyStr = matchobj.group(0)
@@ -61,15 +64,7 @@ def get_doxy_str(matchobj, newVer):
         retStr = reobj.sub(temp, doxyStr)
     elif PART_TO_BUMP == 'patch':
         temp = '.' + str(newVer) + '\n'
-        # reobj = re.compile(r'\.\d+(\.\d+)', re.X)
-        # #match = re.search(reobj, doxyStr)
-        # retStr = reobj.search(doxyStr)
-        # test = retStr.group(1).
-        reobj = re.compile(r'^.*?\.\d+\.', re.X)
-        retStr = reobj.search(doxyStr)
-
-        print('')
-    print(retStr)
+        retStr = doxyStr.rpartition('.')[0] + temp #  GET THE PART OF A STRING BEFORE THE LAST OCCURRENCE OF '.'
     return str(retStr)
 
 
@@ -84,17 +79,18 @@ def zero_revision(matchobj):
 def get_major_minor_patch_str(string, Patterns):
     # get major
     matchMaj = re.search(Patterns.rMajor, string)
-    if (matchMaj != None):
-        majorVal = matchMaj.group('val')
     # get minor
     matchMin = re.search(Patterns.rMinor, string)
-    if (matchMin != None):
-        minorVal = matchMin.group('val')
     # get patch
     matchPat = re.search(Patterns.rPatch, string)
-    if (matchPat != None):
-        patchVal = matchPat.group('val')
     
+    try:
+        majorVal = matchMaj.group('val')
+        minorVal = matchMin.group('val')
+        patchVal = matchPat.group('val')
+    except AttributeError or UnboundLocalError:
+        print("ERROR: No match for current version number, check convention: <major>.<minor>.<patch>")
+
     return str(majorVal + '.' + minorVal + '.' + patchVal)
 
 
@@ -176,7 +172,8 @@ def get_config(config_file):
 
 def replace_version_single_file(args):
     partToBump = args.part # = major, minor, or patch
-    global PART_TO_BUMP
+    
+    global PART_TO_BUMP # gives us scope when calling bump_revision and zero_revision
     PART_TO_BUMP = partToBump
 
     # If a version file was specified on the CLI, use it. Otherwise,
@@ -203,11 +200,13 @@ def replace_version_single_file(args):
         content = f.read()
 
     # Check whether C or Doxy
+    print("Checking component for file type...")
     if args.component == "doxy": 
         Patterns = RegexDoxy()
-        print("Using Doxy")
+        print("Using Doxyfile...")
     else:
         Patterns = RegexPreProcessor()
+        print("Using '.h' file...")
 
     # Print version, before we bump it
     print("Pre-bump string:  ", get_major_minor_patch_str(content, Patterns))
@@ -239,7 +238,7 @@ def replace_version_single_file(args):
         print('Skipping update')
 
     # Write back to file with replaced contents
-    print(target_file)
+    print("Target file: " + target_file)
     with open(target_file, 'w', errors='ignore', encoding='utf-8') as f:
         f.write(content)
 
