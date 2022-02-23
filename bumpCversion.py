@@ -6,12 +6,12 @@ from patterns import RegexDoxy, RegexPreProcessor
 from exceptions import DoxyException
 from typing import NamedTuple, Pattern
 
+PART_TO_BUMP = ''
 
 class ConfigStruct(NamedTuple):
     name: str
     path: str
 
-PART_TO_BUMP = ''
 
 def modify_revision(matchobj, action):
     """
@@ -42,6 +42,7 @@ def modify_revision(matchobj, action):
 
     return (str(retStr))
 
+
 def change_bump_on_zero():
     global PART_TO_BUMP
     if PART_TO_BUMP == 'major':
@@ -63,7 +64,7 @@ def get_doxy_str(matchobj, newVer):
         reobj = re.compile(r'\.\d+\.', re.X)
         retStr = reobj.sub(temp, doxyStr)
     elif PART_TO_BUMP == 'patch':
-        temp = '.' + str(newVer) + '\n'
+        temp = '.' + str(newVer) 
         retStr = doxyStr.rpartition('.')[0] + temp #  GET THE PART OF A STRING BEFORE THE LAST OCCURRENCE OF '.'
     return str(retStr)
 
@@ -170,16 +171,13 @@ def get_config(config_file):
     return config_file_exists, components
 
 
-def replace_version_single_file(args):
-    partToBump = args.part # = major, minor, or patch
-    
-    global PART_TO_BUMP # gives us scope when calling bump_revision and zero_revision
-    PART_TO_BUMP = partToBump
-
-    # If a version file was specified on the CLI, use it. Otherwise,
-    # look for a configuration file.
+# If a version file was specified on the CLI, use it. Otherwise,
+# look for a configuration file.
+def get_target_file(args):
+    target_file = ""
     if args.version_file:
         target_file = args.version_file
+        return target_file
     else:
         config_file_exists, cfg_components = get_config(args.config_file)
 
@@ -193,26 +191,24 @@ def replace_version_single_file(args):
                 # This will obviously only grab the first file.
                 # TODO: Add ability for multiple files to be handled.
                 target_file = comp.path
-                break
+                break    
+    return target_file
 
-    # Open file for reading
-    with open(target_file, 'r', errors='ignore', encoding='utf-8') as f:
-        content = f.read()
 
-    # Check whether C or Doxy
+def get_component_patterns(args):
     print("Checking component for file type...")
     if args.component == "doxy": 
-        Patterns = RegexDoxy()
         print("Using Doxyfile...")
+        Patterns = RegexDoxy()
+        return Patterns
     else:
-        Patterns = RegexPreProcessor()
         print("Using '.h' file...")
+        Patterns = RegexPreProcessor()
+        return Patterns
 
-    # Print version, before we bump it
-    print("Pre-bump string:  ", get_major_minor_patch_str(content, Patterns))
 
-    # Bump the revision based on the 'part' command line arg
-    if partToBump == 'major':
+def check_bump(args, content, Patterns, part_to_bump):
+    if part_to_bump == 'major':
         # Bump major
         reobj = re.compile(Patterns.rMajor, re.X)
         content = reobj.sub(bump_revision, content)
@@ -223,7 +219,7 @@ def replace_version_single_file(args):
             # Zero patch
             reobj = re.compile(Patterns.rPatch, re.X)
             content = reobj.sub(zero_revision, content)
-    elif partToBump == 'minor':
+    elif part_to_bump == 'minor':
         # Bump minor
         reobj = re.compile(Patterns.rMinor, re.X)
         content = reobj.sub(bump_revision, content)
@@ -231,11 +227,39 @@ def replace_version_single_file(args):
             # Zero patch
             reobj = re.compile(Patterns.rPatch, re.X)
             content = reobj.sub(zero_revision, content)
-    elif partToBump == 'patch':
+    elif part_to_bump == 'patch':
         reobj = re.compile(Patterns.rPatch, re.X)
         content = reobj.sub(bump_revision, content)
     else:
-        print('Skipping update')
+        print('Skipping update')   
+    return content 
+
+
+def main():
+
+    # Parse command line arguments
+    args = parse_args()
+
+    # gives us scope for part_to_bump when calling bump_revision and zero_revision
+    part_to_bump = args.part # = major, minor, or patch
+    global PART_TO_BUMP 
+    PART_TO_BUMP = part_to_bump
+
+    # get file we're interested in
+    target_file = get_target_file(args)
+
+    # Open file for reading
+    with open(target_file, 'r', errors='ignore', encoding='utf-8') as f:
+        content = f.read()
+
+        # Check whether C or Doxy, returns Patterns for either C or Doxy file.
+        Patterns = get_component_patterns(args)
+
+        # Print version, before we bump it
+        print("Pre-bump string:  ", get_major_minor_patch_str(content, Patterns))
+
+        # Bump the revision based on the 'part' command line arg
+        content = check_bump(args, content, Patterns, part_to_bump)
 
     # Write back to file with replaced contents
     print("Target file: " + target_file)
@@ -244,14 +268,6 @@ def replace_version_single_file(args):
 
     # Print version, after we bump it
     print("Post-bump string:  ", get_major_minor_patch_str(content, Patterns))
-
-
-def main():
-
-    # Parse command line arguments
-    args = parse_args()
-
-    replace_version_single_file(args)
 
 
 if __name__ == '__main__':
