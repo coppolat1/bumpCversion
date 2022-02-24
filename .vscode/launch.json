@@ -5,7 +5,7 @@
    "version": "0.2.0",
    "configurations": [
       {
-         "name": "Python: Current File",
+         "name": "Bump naibrd major",
          "type": "python",
          "request": "launch",
          "program": "${file}",
@@ -15,6 +15,20 @@
             "./tests/.bump.cfg",
             "--component",
             "naibrd",
+            "major"
+         ]
+      },
+      {
+         "name": "Bump Doxyfiile Major",
+         "type": "python",
+         "request": "launch",
+         "program": "${file}",
+         "console": "integratedTerminal",
+         "args": [
+            "--config-file",
+            "./tests/.bump.cfg",
+            "--component",
+            "doxy",
             "major"
          ]
       }
