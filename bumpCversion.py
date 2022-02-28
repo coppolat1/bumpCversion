@@ -2,97 +2,14 @@ import os
 import re
 import argparse
 import configparser
-from patterns import RegexDoxy, RegexPreProcessor
+from filetypes import Doxy, PreProcessor
 from exceptions import DoxyException
-from typing import NamedTuple, Pattern
+from typing import NamedTuple
 
-PART_TO_BUMP = ''
 
 class ConfigStruct(NamedTuple):
     name: str
     path: str
-
-
-def modify_revision(matchobj, action):
-    """
-    Caveats:
-    Assumes the following named match groups exist: varName, nSpaces, val
-    and name.
-    """
-    currentVer = int(matchobj.group('val'))
-    retStr = ''
-  
-    if (action == 'zero'):
-        change_bump_on_zero()
-        newVer = 0
-    elif (action == 'bump'):
-        newVer = currentVer + 1
-    else:
-        raise ValueError("Invalid 'action' parameter " + str(action))
-
-
-    try:
-        retStr = "#define " + matchobj.group('varName') + matchobj.group('nSpaces') + \
-        "(" + str(newVer) + matchobj.group('unsigned') + ")"
-        return (str(retStr))
-    except IndexError:
-        print("WARNING: " + str(DoxyException(matchobj)))
-        retStr = get_doxy_str(matchobj, newVer)
-        pass
-
-    return (str(retStr))
-
-
-def change_bump_on_zero():
-    global PART_TO_BUMP
-    if PART_TO_BUMP == 'major':
-        PART_TO_BUMP = 'minor'
-    elif PART_TO_BUMP == 'minor':
-        PART_TO_BUMP = 'patch'
-    else:
-        PART_TO_BUMP = 'patch'
-
-
-def get_doxy_str(matchobj, newVer):
-    doxyStr = matchobj.group(0)
-    if PART_TO_BUMP == 'major':
-        temp = '=' + str(newVer) + '.'
-        reobj = re.compile(r'=\s*\d+\.', re.X)
-        retStr = reobj.sub(temp, doxyStr)
-    elif PART_TO_BUMP == 'minor':
-        temp = '.' + str(newVer) + '.'
-        reobj = re.compile(r'\.\d+\.', re.X)
-        retStr = reobj.sub(temp, doxyStr)
-    elif PART_TO_BUMP == 'patch':
-        temp = '.' + str(newVer) 
-        retStr = doxyStr.rpartition('.')[0] + temp #  GET THE PART OF A STRING BEFORE THE LAST OCCURRENCE OF '.'
-    return str(retStr)
-
-
-def bump_revision(matchobj):
-    return modify_revision(matchobj, 'bump')
-
-
-def zero_revision(matchobj):
-    return modify_revision(matchobj, 'zero')
-
-
-def get_major_minor_patch_str(string, Patterns):
-    # get major
-    matchMaj = re.search(Patterns.rMajor, string)
-    # get minor
-    matchMin = re.search(Patterns.rMinor, string)
-    # get patch
-    matchPat = re.search(Patterns.rPatch, string)
-    
-    try:
-        majorVal = matchMaj.group('val')
-        minorVal = matchMin.group('val')
-        patchVal = matchPat.group('val')
-    except AttributeError or UnboundLocalError:
-        print("ERROR: No match for current version number, check convention: <major>.<minor>.<patch>")
-
-    return str(majorVal + '.' + minorVal + '.' + patchVal)
 
 
 def extant_file(x):
@@ -195,44 +112,16 @@ def get_target_file(args):
     return target_file
 
 
-def get_component_patterns(args):
+def get_filetype_object(args, target_file):
     print("Checking component for file type...")
     if args.component == "doxy": 
         print("Using Doxyfile...")
-        Patterns = RegexDoxy()
-        return Patterns
+        filetype = Doxy(args, target_file)
+        return filetype
     else:
         print("Using '.h' file...")
-        Patterns = RegexPreProcessor()
-        return Patterns
-
-
-def check_bump(args, content, Patterns, part_to_bump):
-    if part_to_bump == 'major':
-        # Bump major
-        reobj = re.compile(Patterns.rMajor, re.X)
-        content = reobj.sub(bump_revision, content)
-        if not (args.dont_reset):
-            # Zero minor
-            reobj = re.compile(Patterns.rMinor, re.X)
-            content = reobj.sub(zero_revision, content)
-            # Zero patch
-            reobj = re.compile(Patterns.rPatch, re.X)
-            content = reobj.sub(zero_revision, content)
-    elif part_to_bump == 'minor':
-        # Bump minor
-        reobj = re.compile(Patterns.rMinor, re.X)
-        content = reobj.sub(bump_revision, content)
-        if not (args.dont_reset):
-            # Zero patch
-            reobj = re.compile(Patterns.rPatch, re.X)
-            content = reobj.sub(zero_revision, content)
-    elif part_to_bump == 'patch':
-        reobj = re.compile(Patterns.rPatch, re.X)
-        content = reobj.sub(bump_revision, content)
-    else:
-        print('Skipping update')   
-    return content 
+        filetype = PreProcessor(args, target_file)
+        return filetype
 
 
 def main():
@@ -240,34 +129,29 @@ def main():
     # Parse command line arguments
     args = parse_args()
 
-    # gives us scope for part_to_bump when calling bump_revision and zero_revision
-    part_to_bump = args.part # = major, minor, or patch
-    global PART_TO_BUMP 
-    PART_TO_BUMP = part_to_bump
+    # users desired part (major, minor, or patch) to bump
+    part_to_bump = args.part
 
     # get file we're interested in
     target_file = get_target_file(args)
 
-    # Open file for reading
-    with open(target_file, 'r', errors='ignore', encoding='utf-8') as f:
-        content = f.read()
-
-        # Check whether C or Doxy, returns Patterns for either C or Doxy file.
-        Patterns = get_component_patterns(args)
-
-        # Print version, before we bump it
-        print("Pre-bump string:  ", get_major_minor_patch_str(content, Patterns))
-
-        # Bump the revision based on the 'part' command line arg
-        content = check_bump(args, content, Patterns, part_to_bump)
+    # Creates object representing given filetype
+    filetype = get_filetype_object(args, target_file)
+    
+    # Print version, before we bump it
+    print("Pre-bump string:  ", filetype.get_major_minor_patch_str())
 
     # Write back to file with replaced contents
     print("Target file: " + target_file)
-    with open(target_file, 'w', errors='ignore', encoding='utf-8') as f:
-        f.write(content)
+    
+    # Bump filetype objects local variable of version
+    filetype.bump(part_to_bump)
 
+    # Overwrite file based on filetype objects fields
+    filetype.overwrite_version()
+   
     # Print version, after we bump it
-    print("Post-bump string:  ", get_major_minor_patch_str(content, Patterns))
+    print("Post-bump string:  ", filetype.get_major_minor_patch_str())
 
 
 if __name__ == '__main__':

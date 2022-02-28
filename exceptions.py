@@ -19,5 +19,16 @@ class DoxyException(BaseError):
     """
     exception thrown if the user uses a Doxyfile
     """
-    def __init__(self, val, message="Not a C-language file, defaulting to Doxyfile..."):
+    def __init__(self, 
+    val,
+    message="Format of Doxyfile contents incorrect. Expecting format: PROJECT_NUMBER= <major>.<minor>.<patch>"):
+        super().__init__(val, message)
+
+class PreProcessorException(BaseError):
+    """
+    exception thrown if the user uses a C header file
+    """
+    def __init__(self, 
+    val, 
+    message="Format of C contents incorrect. Expecting format (example): \n#define XXXXX_XXXXX_MAJOR (2U)\n#define XXXXX_XXXXX_MINOR (2U)\n#define XXXXX_XXXXX_PATCH (2U)\n"):
         super().__init__(val, message)
