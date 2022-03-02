@@ -35,10 +35,10 @@ class PreProcessor:
     def __init__(self, args, target_file):
         self.args = args
         self.target_file = target_file
-
+        self.init_version()
 
     # returns string of verison
-    def get_major_minor_patch_str(self):
+    def init_version(self):
         content = ""
         # Open file for reading
         with open(self.target_file, 'r', errors='ignore', encoding='utf-8') as input:
@@ -58,10 +58,18 @@ class PreProcessor:
         except AttributeError:
             raise(PreProcessorException(Exception))
 
-        self.version[0] = majorVal
-        self.version[1] = minorVal
-        self.version[2] = patchVal
-        return str(majorVal + '.' + minorVal + '.' + patchVal)
+        
+        self.set_version(majorVal, minorVal, patchVal)
+
+    #   functions
+    def get_version(self):
+        return self.version
+
+    def set_version(self, major, minor, patch):
+        self.version[0] = major
+        self.version[1] = minor
+        self.version[2] = patch
+
 
     # return content with bumped version
     def bump(self, part_to_bump):
@@ -99,17 +107,27 @@ class PreProcessor:
         line = re.sub(r'(\d+)', part_num, line) # change contents
         return line
 
-
+    def version_tostr(self):
+        return '.'.join(self.version) 
 
 class Doxy:
     #   variables
     r_pattern = r"PROJECT_NUMBER\s*=\s*(?P<major>\d+)\.(?P<minor>\d+)?\.(?P<patch>\*|\d+)"
-    zero_minor = False
-    zero_patch = False
-    version = "0.0.0"
+    version = ["0", "0", "0"] # [major, minor, patch]
+    args = None # Namespace(config_file='./tests/.bump.cfg', version_file=None, part='minor', dont_reset=False, component='naibrd')
+    target_file = None # init as None
 
-    #   functions
-    def get_major_minor_patch_str(self, content):
+    def __init__(self, args, target_file):
+        self.args = args
+        self.target_file = target_file
+        self.init_version()
+
+    def init_version(self):
+        content = ""
+        # Open file for reading
+        with open(self.target_file, 'r', errors='ignore', encoding='utf-8') as input:
+            content = input.read()
+
         # get version
         version = re.search(self.r_pattern, content)
 
@@ -118,12 +136,47 @@ class Doxy:
             minorVal = version.group('minor')
             patchVal = version.group('patch')
         except AttributeError:
-            raise(DoxyException())
+            raise(DoxyException(Exception))
 
-        self.version[0] = majorVal
-        self.version[1] = minorVal
-        self.version[2] = patchVal
+        self.set_version(majorVal, minorVal, patchVal)  
+
+    #   functions
+    def get_version(self):
+        return self.version
+
+    def set_version(self, major, minor, patch):
+        self.version[0] = major
+        self.version[1] = minor
+        self.version[2] = patch
+
+    # return content with bumped version
+    def bump(self, part_to_bump):
+        if part_to_bump == 'major':
+            self.version[0] = str(int(self.version[0]) + 1)
+            if not(self.args.dont_reset):
+                self.version[1] = "0"
+                self.version[2] = "0"
+        elif part_to_bump == 'minor':
+            self.version[1] = str(int(self.version[1]) + 1)
+            if not(self.args.dont_reset):
+                self.version[2] = "0"
+        elif part_to_bump == 'patch':
+            self.version[2] = str(int(self.version[2]) + 1)
+
+    
+    def overwrite_version(self):
+            file_contents = []
+            with open(self.target_file, "r") as input:
+                for line in input:
+                    file_contents.append(line)
+            with open(self.target_file, "w", encoding='utf-8') as output:
+                for line in file_contents:
+                    if 'PROJECT_NUMBER' in line and not line.startswith('#'):
+                        temp = line.rpartition('=')[0] + line.rpartition('=')[1] + '.'.join(self.version) + '\n'                        
+                        line = temp
+                    output.write(line)
+
+    def version_tostr(self):
+        return '.'.join(self.version) 
         
-        return str(majorVal + '.' + minorVal + '.' + patchVal)
-
 

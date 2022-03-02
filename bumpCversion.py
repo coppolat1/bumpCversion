@@ -1,9 +1,7 @@
 import os
-import re
 import argparse
 import configparser
 from filetypes import Doxy, PreProcessor
-from exceptions import DoxyException
 from typing import NamedTuple
 
 
@@ -139,19 +137,20 @@ def main():
     filetype = get_filetype_object(args, target_file)
     
     # Print version, before we bump it
-    print("Pre-bump string:  ", filetype.get_major_minor_patch_str())
+    print("Pre-bump string:  ", filetype.version_tostr())
 
     # Write back to file with replaced contents
     print("Target file: " + target_file)
     
-    # Bump filetype objects local variable of version
+    # Bump filetype object local variable of version
+    print("Bumping " + str(args.part) + "...")
     filetype.bump(part_to_bump)
 
     # Overwrite file based on filetype objects fields
     filetype.overwrite_version()
    
     # Print version, after we bump it
-    print("Post-bump string:  ", filetype.get_major_minor_patch_str())
+    print("Post-bump string:  ", filetype.version_tostr())
 
 
 if __name__ == '__main__':
