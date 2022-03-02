@@ -1,11 +1,47 @@
-from dataclasses import replace
 import re
 
 from exceptions import DoxyException, PreProcessorException
 
-class PreProcessor:
+class Filetype():
 
-    #   variables
+    version = ["0", "0", "0"] # [major, minor, patch]
+    args = None # Namespace(config_file='./tests/.bump.cfg', version_file=None, part='minor', dont_reset=False, component='naibrd')
+    target_file = None # init as None
+
+
+    def __init__(self, args, target_file):
+        self.args = args
+        self.target_file = target_file
+        self.init_version()
+
+
+    def set_version(self, major, minor, patch):
+        self.version[0] = major
+        self.version[1] = minor
+        self.version[2] = patch
+
+
+    # return content with bumped version
+    def bump(self, part_to_bump):
+        if part_to_bump == 'major':
+            self.version[0] = str(int(self.version[0]) + 1)
+            if not(self.args.dont_reset):
+                self.version[1] = "0"
+                self.version[2] = "0"
+        elif part_to_bump == 'minor':
+            self.version[1] = str(int(self.version[1]) + 1)
+            if not(self.args.dont_reset):
+                self.version[2] = "0"
+        elif part_to_bump == 'patch':
+            self.version[2] = str(int(self.version[2]) + 1)
+
+
+    def version_tostr(self):
+        return '.'.join(self.version) 
+
+
+class PreProcessor(Filetype):
+    #   Define regex patterns
     r_major = r"""
     \#define\s                  # Match '#define '
     (?P<varName>[A-Z_]*MAJOR)   # Capture group for pre-processor name + 'MAJOR'
@@ -28,16 +64,7 @@ class PreProcessor:
     (?P<unsigned>[uU]?)\)   # Capture group to capture 'U' (zero or one times) and ')'
     """
     
-    version = ["0", "0", "0"] # [major, minor, patch]
-    args = None # Namespace(config_file='./tests/.bump.cfg', version_file=None, part='minor', dont_reset=False, component='naibrd')
-    target_file = None # init as None
-
-    def __init__(self, args, target_file):
-        self.args = args
-        self.target_file = target_file
-        self.init_version()
-
-    # returns string of verison
+    # initializes version based off regex
     def init_version(self):
         content = ""
         # Open file for reading
@@ -59,32 +86,8 @@ class PreProcessor:
             raise(PreProcessorException(Exception))
 
         
-        self.set_version(majorVal, minorVal, patchVal)
+        self.set_version(majorVal, minorVal, patchVal)   
 
-    #   functions
-    def get_version(self):
-        return self.version
-
-    def set_version(self, major, minor, patch):
-        self.version[0] = major
-        self.version[1] = minor
-        self.version[2] = patch
-
-
-    # return content with bumped version
-    def bump(self, part_to_bump):
-        if part_to_bump == 'major':
-            self.version[0] = str(int(self.version[0]) + 1)
-            if not(self.args.dont_reset):
-                self.version[1] = "0"
-                self.version[2] = "0"
-        elif part_to_bump == 'minor':
-            self.version[1] = str(int(self.version[1]) + 1)
-            if not(self.args.dont_reset):
-                self.version[2] = "0"
-        elif part_to_bump == 'patch':
-            self.version[2] = str(int(self.version[2]) + 1)
-        
 
     def overwrite_version(self):
         file_contents = []
@@ -107,21 +110,12 @@ class PreProcessor:
         line = re.sub(r'(\d+)', part_num, line) # change contents
         return line
 
-    def version_tostr(self):
-        return '.'.join(self.version) 
 
-class Doxy:
-    #   variables
+class Doxy(Filetype):
+    #   Define regex patterns
     r_pattern = r"PROJECT_NUMBER\s*=\s*(?P<major>\d+)\.(?P<minor>\d+)?\.(?P<patch>\*|\d+)"
-    version = ["0", "0", "0"] # [major, minor, patch]
-    args = None # Namespace(config_file='./tests/.bump.cfg', version_file=None, part='minor', dont_reset=False, component='naibrd')
-    target_file = None # init as None
 
-    def __init__(self, args, target_file):
-        self.args = args
-        self.target_file = target_file
-        self.init_version()
-
+    # initializes version based off regex
     def init_version(self):
         content = ""
         # Open file for reading
@@ -140,30 +134,7 @@ class Doxy:
 
         self.set_version(majorVal, minorVal, patchVal)  
 
-    #   functions
-    def get_version(self):
-        return self.version
 
-    def set_version(self, major, minor, patch):
-        self.version[0] = major
-        self.version[1] = minor
-        self.version[2] = patch
-
-    # return content with bumped version
-    def bump(self, part_to_bump):
-        if part_to_bump == 'major':
-            self.version[0] = str(int(self.version[0]) + 1)
-            if not(self.args.dont_reset):
-                self.version[1] = "0"
-                self.version[2] = "0"
-        elif part_to_bump == 'minor':
-            self.version[1] = str(int(self.version[1]) + 1)
-            if not(self.args.dont_reset):
-                self.version[2] = "0"
-        elif part_to_bump == 'patch':
-            self.version[2] = str(int(self.version[2]) + 1)
-
-    
     def overwrite_version(self):
             file_contents = []
             with open(self.target_file, "r") as input:
@@ -176,7 +147,5 @@ class Doxy:
                         line = temp
                     output.write(line)
 
-    def version_tostr(self):
-        return '.'.join(self.version) 
         
 
