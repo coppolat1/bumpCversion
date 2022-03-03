@@ -7,7 +7,7 @@ from typing import NamedTuple
 
 class ConfigStruct(NamedTuple):
     name: str
-    path: str
+    paths: list
 
 
 def extant_file(x):
@@ -80,19 +80,19 @@ def get_config(config_file):
 
     config.read(config_file)
     for section in config.sections():
-        if config.has_option(section, 'filetobump'):
-            components.append(ConfigStruct(section,
-                                           config.get(section, 'filetobump')))
+        if config.has_option(section, 'filestobump'):
+            values = [value.strip() for value in config.get(section, 'filestobump').split(',')]
+            components.append(ConfigStruct(section, values))
     return config_file_exists, components
 
 
 # If a version file was specified on the CLI, use it. Otherwise,
 # look for a configuration file.
-def get_target_file(args):
-    target_file = ""
+def get_target_files(args):
+    target_files = []
     if args.version_file:
-        target_file = args.version_file
-        return target_file
+        target_files.append(args.version_file)
+        return target_files
     else:
         config_file_exists, cfg_components = get_config(args.config_file)
 
@@ -102,24 +102,28 @@ def get_target_file(args):
 
         for comp in cfg_components:
             if args.component == comp.name:
-                print("Using component:", comp.name)
-                # This will obviously only grab the first file.
-                # TODO: Add ability for multiple files to be handled.
-                target_file = comp.path
-                break    
-    return target_file
+                print("\nUsing component:", comp.name + '\n')
+                for path in comp.paths:
+                    target_files.append(path)
+                 
+    return target_files
 
 
-def get_filetype_object(args, target_file):
+def get_filetype_object(args, target_files):
     print("Checking component for file type...")
-    if args.component == "doxy": 
-        print("Using Doxyfile...")
-        filetype = Doxy(args, target_file)
-        return filetype
-    else:
-        print("Using '.h' file...")
-        filetype = PreProcessor(args, target_file)
-        return filetype
+    for file in target_files:
+        if "Doxyfile" in file: 
+            print("Using Doxyfile...")
+            filetype = Doxy(args, file)
+            return filetype
+        elif file.endswith('.h'):
+            print("Using '.h' file...")
+            filetype = PreProcessor(args, file)
+            return filetype
+        else:
+            print("ERROR: Filetype not supported.")
+    return filetype
+    
 
 
 def main():
@@ -131,26 +135,31 @@ def main():
     part_to_bump = args.part
 
     # get file we're interested in
-    target_file = get_target_file(args)
+    target_files = get_target_files(args)
 
-    # Creates object representing given filetype
-    filetype = get_filetype_object(args, target_file)
+    while target_files:
+
+        # Creates object representing first file from `target_files`, then pops it off list
+        filetype = get_filetype_object(args, target_files)
+        
+        # Print version, before we bump it
+        print("Pre-bump string:  ", filetype.version_tostr())
+
+        # Write back to file with replaced contents
+        print("Target file: " + target_files[0])
+        
+        # Bump filetype object local variable of version
+        print("Bumping " + str(args.part) + "...")
+        filetype.bump(part_to_bump)
+
+        # Overwrite file based on filetype objects fields
+        filetype.overwrite_version()
     
-    # Print version, before we bump it
-    print("Pre-bump string:  ", filetype.version_tostr())
+        # Print version, after we bump it
+        print("Post-bump string:  ", filetype.version_tostr() + '\n')
 
-    # Write back to file with replaced contents
-    print("Target file: " + target_file)
-    
-    # Bump filetype object local variable of version
-    print("Bumping " + str(args.part) + "...")
-    filetype.bump(part_to_bump)
-
-    # Overwrite file based on filetype objects fields
-    filetype.overwrite_version()
-   
-    # Print version, after we bump it
-    print("Post-bump string:  ", filetype.version_tostr())
+        # Pop `target_files` until out of files
+        target_files.pop(0)
 
 
 if __name__ == '__main__':
