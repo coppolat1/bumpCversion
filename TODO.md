@@ -5,8 +5,6 @@ semantic pre-processor version definitions.
 ### 'To Do' List
 - [x] Check if a config file exists in the CWD and use it.
   - [ ] Is recursing the whole tree desirable?
-- [ ] Bump version number in Doxyfile also.
-   - Maybe we can choose which regex to use by file extension type.
 - [ ] Is support for other scripting a good feature?
    - i.e., script to check for content in 'unreleased' changelog section.
 
@@ -26,3 +24,5 @@ semantic pre-processor version definitions.
 - [x] Zero patch when minor is bumped?
 - [x] Add ability to specify a configuration file as an argument.
   - [x] Clean this up
+- [x] Bump version number in Doxyfile also.
+   - [x] Maybe we can choose which regex to use by file extension type.
