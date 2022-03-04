@@ -2,26 +2,26 @@ import re
 
 from exceptions import DoxyException, PreProcessorException
 
+
 class Filetype():
 
-    version = ["0", "0", "0"] # [major, minor, patch]
-    args = None # Namespace(config_file='./tests/.bump.cfg', version_file=None, part='minor', dont_reset=False, component='naibrd')
-    target_file = None # init as None
-
+    version = ["0", "0", "0"]  # [major, minor, patch]
+    # Namespace(config_file='./tests/.bump.cfg', version_file=None, part='minor', dont_reset=False, component='naibrd')
+    args = None
+    target_file = None  # init as None
 
     def __init__(self, args, target_file):
         self.args = args
         self.target_file = target_file
         self.init_version()
 
-
     def set_version(self, major, minor, patch):
         self.version[0] = major
         self.version[1] = minor
         self.version[2] = patch
 
-
     # return content with bumped version
+
     def bump(self, part_to_bump):
         if part_to_bump == 'major':
             self.version[0] = str(int(self.version[0]) + 1)
@@ -35,9 +35,8 @@ class Filetype():
         elif part_to_bump == 'patch':
             self.version[2] = str(int(self.version[2]) + 1)
 
-
     def version_tostr(self):
-        return '.'.join(self.version) 
+        return '.'.join(self.version)
 
 
 class PreProcessor(Filetype):
@@ -63,14 +62,14 @@ class PreProcessor(Filetype):
     (?P<val>\d+)            # Capture group for any number of digits
     (?P<unsigned>[uU]?)\)   # Capture group to capture 'U' (zero or one times) and ')'
     """
-    
+
     # initializes version based off regex
     def init_version(self):
         content = ""
         # Open file for reading
         with open(self.target_file, 'r', errors='ignore', encoding='utf-8') as input:
             content = input.read()
-  
+
         # get major
         matchMaj = re.search(self.r_major, content, re.X)
         # get minor
@@ -85,9 +84,7 @@ class PreProcessor(Filetype):
         except AttributeError:
             raise(PreProcessorException(Exception))
 
-        
-        self.set_version(majorVal, minorVal, patchVal)   
-
+        self.set_version(majorVal, minorVal, patchVal)
 
     def overwrite_version(self):
         file_contents = []
@@ -105,9 +102,8 @@ class PreProcessor(Filetype):
                         line = self.replace_part(self.version[2], line)
                 output.write(line)
 
-
     def replace_part(self, part_num, line):
-        line = re.sub(r'(\d+)', part_num, line) # change contents
+        line = re.sub(r'(\d+)', part_num, line)  # change contents
         return line
 
 
@@ -132,20 +128,17 @@ class Doxy(Filetype):
         except AttributeError:
             raise(DoxyException(Exception))
 
-        self.set_version(majorVal, minorVal, patchVal)  
-
+        self.set_version(majorVal, minorVal, patchVal)
 
     def overwrite_version(self):
-            file_contents = []
-            with open(self.target_file, "r") as input:
-                for line in input:
-                    file_contents.append(line)
-            with open(self.target_file, "w", encoding='utf-8') as output:
-                for line in file_contents:
-                    if 'PROJECT_NUMBER' in line and not line.startswith('#'):
-                        temp = line.rpartition('=')[0] + line.rpartition('=')[1] + '.'.join(self.version) + '\n'                        
-                        line = temp
-                    output.write(line)
-
-        
-
+        file_contents = []
+        with open(self.target_file, "r") as input:
+            for line in input:
+                file_contents.append(line)
+        with open(self.target_file, "w", encoding='utf-8') as output:
+            for line in file_contents:
+                if 'PROJECT_NUMBER' in line and not line.startswith('#'):
+                    temp = line.rpartition(
+                        '=')[0] + line.rpartition('=')[1] + '.'.join(self.version) + '\n'
+                    line = temp
+                output.write(line)

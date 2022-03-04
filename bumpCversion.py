@@ -82,7 +82,8 @@ def get_config(config_file):
     config.read(config_file)
     for section in config.sections():
         if config.has_option(section, 'filestobump'):
-            values = [value.strip() for value in config.get(section, 'filestobump').split(',')]
+            values = [value.strip() for value in config.get(
+                section, 'filestobump').split(',')]
             components.append(ConfigStruct(section, values))
     return config_file_exists, components
 
@@ -106,7 +107,7 @@ def get_target_files(args):
                 print("\nUsing component:", comp.name + '\n')
                 for path in comp.paths:
                     target_files.append(path)
-                 
+
     return target_files
 
 
@@ -114,7 +115,7 @@ def get_target_files(args):
 def get_filetype_object(args, target_files):
     print("Checking component for file type...")
     for file in target_files:
-        if "Doxyfile" in file: 
+        if "Doxyfile" in file:
             print("Using Doxyfile...")
             filetype = Doxy(args, file)
             return filetype
@@ -125,7 +126,6 @@ def get_filetype_object(args, target_files):
         else:
             print("ERROR: Filetype not supported.")
     return filetype
-    
 
 
 def main():
@@ -143,7 +143,7 @@ def main():
 
         # Creates object representing first file from `target_files`, then pops it off list
         filetype = get_filetype_object(args, target_files)
-        
+
         # Print file were working with
         print("Target file: " + target_files[0])
 
@@ -156,7 +156,7 @@ def main():
 
         # Overwrite file based on filetype objects fields
         filetype.overwrite_version()
-    
+
         # Print version, after we bump it
         print("Post-bump string:  ", filetype.version_tostr() + '\n')
 
