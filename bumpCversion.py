@@ -1,88 +1,13 @@
 import os
-import re
 import argparse
 import configparser
+from filetypes import Doxy, PreProcessor
 from typing import NamedTuple
-
-rAnyPreprocessorDefine = r"""
-\#define\s              # Match '#define '
-(?P<varName>[A-Z_]*)    # Capture group for pre-processor name
-(?P<nSpaces>\s*)\(      # Capture group for spaces between name and '('
-(?P<val>\d+)            # Capture group for any number of digits
-(?P<unsigned>[uU]?)\)   # Capture group to capture 'U' (zero or one times) and ')'
-"""
-rPreprocessorMajor = r"""
-\#define\s                  # Match '#define '
-(?P<varName>[A-Z_]*MAJOR)   # Capture group for pre-processor name + 'MAJOR'
-(?P<nSpaces>\s*)\(          # Capture group for spaces between name and '('
-(?P<val>\d+)                # Capture group for any number of digits
-(?P<unsigned>[uU]?)\)       # Capture group to capture 'U' (zero or one times) and ')'
-"""
-rPreprocessorMinor = r"""
-\#define\s              # Match '#define '
-(?P<varName>[A-Z_]*MINOR)    # Capture group for pre-processor name + 'MINOR'
-(?P<nSpaces>\s*)\(      # Capture group for spaces between name and '('
-(?P<val>\d+)            # Capture group for any number of digits
-(?P<unsigned>[uU]?)\)   # Capture group to capture 'U' (zero or one times) and ')'
-"""
-rPreprocessorPatch = r"""
-\#define\s              # Match '#define '
-(?P<varName>[A-Z_]*PATCH)    # Capture group for pre-processor name + 'PATCH'
-(?P<nSpaces>\s*)\(      # Capture group for spaces between name and '('
-(?P<val>\d+)            # Capture group for any number of digits
-(?P<unsigned>[uU]?)\)   # Capture group to capture 'U' (zero or one times) and ')'
-"""
 
 
 class ConfigStruct(NamedTuple):
     name: str
-    path: str
-
-
-def modify_revision(matchobj, action):
-    """
-    Caveats:
-    Assumes the following named match groups exist: varName, nSpaces, val
-    and name.
-    """
-    currentVer = int(matchobj.group('val'))
-
-    if (action == 'zero'):
-        newVer = 0
-    elif (action == 'bump'):
-        newVer = currentVer + 1
-    else:
-        raise ValueError("Invalid 'action' parameter " + str(action))
-
-    retStr = "#define " + matchobj.group('varName') + matchobj.group('nSpaces') + \
-        "(" + str(newVer) + matchobj.group('unsigned') + ")"
-
-    return (str(retStr))
-
-
-def bump_revision(matchobj):
-    return modify_revision(matchobj, 'bump')
-
-
-def zero_revision(matchobj):
-    return modify_revision(matchobj, 'zero')
-
-
-def get_major_minor_patch_str(string):
-    # get major
-    reMajor = re.compile(rPreprocessorMajor, re.X)
-    matchMaj = reMajor.search(string)
-    majorVal = matchMaj.group('val')
-    # get minor
-    reMinor = re.compile(rPreprocessorMinor, re.X)
-    matchMin = reMinor.search(string)
-    minorVal = matchMin.group('val')
-    # get patch
-    rePatch = re.compile(rPreprocessorPatch, re.X)
-    matchPat = rePatch.search(string)
-    patchVal = matchPat.group('val')
-
-    return str(majorVal + '.' + minorVal + '.' + patchVal)
+    paths: list
 
 
 def extant_file(x):
@@ -153,21 +78,22 @@ def get_config(config_file):
         print("Configuration does not exist!")
         return config_file_exists, []
 
+    # append every path from .cfg's filesToBump variable
     config.read(config_file)
     for section in config.sections():
-        if config.has_option(section, 'filetobump'):
-            components.append(ConfigStruct(section,
-                                           config.get(section, 'filetobump')))
+        if config.has_option(section, 'filestobump'):
+            values = [value.strip() for value in config.get(section, 'filestobump').split(',')]
+            components.append(ConfigStruct(section, values))
     return config_file_exists, components
 
 
-def replace_version_single_file(args):
-    partToBump = args.part
-
-    # If a version file was specified on the CLI, use it. Otherwise,
-    # look for a configuration file.
+# If a version file was specified on the CLI, use it. Otherwise,
+# look for a configuration file.
+def get_target_files(args):
+    target_files = []
     if args.version_file:
-        target_file = args.version_file
+        target_files.append(args.version_file)
+        return target_files
     else:
         config_file_exists, cfg_components = get_config(args.config_file)
 
@@ -177,51 +103,29 @@ def replace_version_single_file(args):
 
         for comp in cfg_components:
             if args.component == comp.name:
-                print("Using component:", comp.name)
-                # This will obviously only grab the first file.
-                # TODO: Add ability for multiple files to be handled.
-                target_file = comp.path
-                break
+                print("\nUsing component:", comp.name + '\n')
+                for path in comp.paths:
+                    target_files.append(path)
+                 
+    return target_files
 
-    # Open file for reading
-    with open(target_file, 'r', errors='ignore', encoding='utf-8') as f:
-        content = f.read()
 
-    # Print version, before we bump it
-    print("Pre-bump string:  ", get_major_minor_patch_str(content))
-
-    # Bump the revision based on the 'part' command line arg
-    if partToBump == 'major':
-        # Bump major
-        reobj = re.compile(rPreprocessorMajor, re.X)
-        content = reobj.sub(bump_revision, content)
-        if not (args.dont_reset):
-            # Zero minor
-            reobj = re.compile(rPreprocessorMinor, re.X)
-            content = reobj.sub(zero_revision, content)
-            # Zero patch
-            reobj = re.compile(rPreprocessorPatch, re.X)
-            content = reobj.sub(zero_revision, content)
-    elif partToBump == 'minor':
-        # Bump minor
-        reobj = re.compile(rPreprocessorMinor, re.X)
-        content = reobj.sub(bump_revision, content)
-        if not (args.dont_reset):
-            # Zero patch
-            reobj = re.compile(rPreprocessorPatch, re.X)
-            content = reobj.sub(zero_revision, content)
-    elif partToBump == 'patch':
-        reobj = re.compile(rPreprocessorPatch, re.X)
-        content = reobj.sub(bump_revision, content)
-    else:
-        print('Skipping update')
-
-    # Write back to file with replaced contents
-    with open(target_file, 'w', errors='ignore', encoding='utf-8') as f:
-        f.write(content)
-
-    # Print version, after we bump it
-    print("Post-bump string:  ", get_major_minor_patch_str(content))
+# return the object representing the filetype
+def get_filetype_object(args, target_files):
+    print("Checking component for file type...")
+    for file in target_files:
+        if "Doxyfile" in file: 
+            print("Using Doxyfile...")
+            filetype = Doxy(args, file)
+            return filetype
+        elif file.endswith('.h'):
+            print("Using '.h' file...")
+            filetype = PreProcessor(args, file)
+            return filetype
+        else:
+            print("ERROR: Filetype not supported.")
+    return filetype
+    
 
 
 def main():
@@ -229,7 +133,35 @@ def main():
     # Parse command line arguments
     args = parse_args()
 
-    replace_version_single_file(args)
+    # users desired part (major, minor, or patch) to bump
+    part_to_bump = args.part
+
+    # get file we're interested in
+    target_files = get_target_files(args)
+
+    while target_files:
+
+        # Creates object representing first file from `target_files`, then pops it off list
+        filetype = get_filetype_object(args, target_files)
+        
+        # Print file were working with
+        print("Target file: " + target_files[0])
+
+        # Print version, before we bump it
+        print("Pre-bump string:  ", filetype.version_tostr())
+
+        # Bump filetype object local variable of version
+        print("Bumping " + str(args.part) + "...")
+        filetype.bump(part_to_bump)
+
+        # Overwrite file based on filetype objects fields
+        filetype.overwrite_version()
+    
+        # Print version, after we bump it
+        print("Post-bump string:  ", filetype.version_tostr() + '\n')
+
+        # Pop `target_files` until out of files
+        target_files.pop(0)
 
 
 if __name__ == '__main__':
