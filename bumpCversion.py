@@ -78,6 +78,7 @@ def get_config(config_file):
         print("Configuration does not exist!")
         return config_file_exists, []
 
+    # append every path from .cfg's filesToBump variable
     config.read(config_file)
     for section in config.sections():
         if config.has_option(section, 'filestobump'):
@@ -109,6 +110,7 @@ def get_target_files(args):
     return target_files
 
 
+# return the object representing the filetype
 def get_filetype_object(args, target_files):
     print("Checking component for file type...")
     for file in target_files:
@@ -142,12 +144,12 @@ def main():
         # Creates object representing first file from `target_files`, then pops it off list
         filetype = get_filetype_object(args, target_files)
         
+        # Print file were working with
+        print("Target file: " + target_files[0])
+
         # Print version, before we bump it
         print("Pre-bump string:  ", filetype.version_tostr())
 
-        # Write back to file with replaced contents
-        print("Target file: " + target_files[0])
-        
         # Bump filetype object local variable of version
         print("Bumping " + str(args.part) + "...")
         filetype.bump(part_to_bump)

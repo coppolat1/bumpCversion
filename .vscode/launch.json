@@ -19,7 +19,7 @@
          ]
       },
       {
-         "name": "Bump Doxyfiile Major",
+         "name": "Bump Doxyfile Major",
          "type": "python",
          "request": "launch",
          "program": "${file}",
