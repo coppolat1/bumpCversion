@@ -17,20 +17,6 @@
             "naibrd",
             "major"
          ]
-      },
-      {
-         "name": "Bump Doxyfile Major",
-         "type": "python",
-         "request": "launch",
-         "program": "${file}",
-         "console": "integratedTerminal",
-         "args": [
-            "--config-file",
-            "./tests/.bump.cfg",
-            "--component",
-            "doxy",
-            "major"
-         ]
       }
    ]
 }
