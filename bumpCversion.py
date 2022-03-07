@@ -116,11 +116,11 @@ def get_filetype_object(args, target_files):
     print("Checking component for file type...")
     for file in target_files:
         if "Doxyfile" in file:
-            print("Using Doxyfile...")
+            print("Using Doxy bump class...")
             filetype = Doxy(args, file)
             return filetype
         elif file.endswith('.h'):
-            print("Using '.h' file...")
+            print("Using preprocessor bump class...")
             filetype = PreProcessor(args, file)
             return filetype
         else:
