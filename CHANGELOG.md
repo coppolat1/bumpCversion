@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog],
 and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
+
+## [0.6.0] - 2022-03-07
 ### Added
 - Doxygen configuration file (Doxyfile) bump support
 - File-type specific classes
