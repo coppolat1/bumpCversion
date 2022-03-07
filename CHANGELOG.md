@@ -5,7 +5,13 @@ The format is based on [Keep a Changelog],
 and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
-None
+### Added
+- Doxygen configuration file (Doxyfile) bump support
+- File-type specific classes
+- Support for multiple 'files to bump' in configuration files
+
+### Changed
+- Moved a lot of bump/regex logic into new file-type specific classes
 
 ## [0.5.0] - 2022-01-21
 ### Added
