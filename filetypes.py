@@ -62,6 +62,7 @@ class PreProcessor(Filetype):
     (?P<val>\d+)            # Capture group for any number of digits
     (?P<unsigned>[uU]?)\)   # Capture group to capture 'U' (zero or one times) and ')'
     """
+    r_var = r'#define\s*([A-Z_]*[VERSION_MAJOR|VERSION_MINOR|VERSION_PATCH])'
 
     # initializes version based off regex
     def init_version(self):
@@ -93,7 +94,8 @@ class PreProcessor(Filetype):
                 file_contents.append(line)
         with open(self.target_file, "w", encoding='utf-8') as output:
             for line in file_contents:
-                if 'LIBNAME_VERSION_' in line:
+                matchObj = re.search(self.r_var, line, re.X)
+                if matchObj != None: # preprocessor name ends in VERSION_MAJOR|VERSION_MINOR|VERSION_PATCH
                     if 'MAJOR' in line:
                         line = self.replace_part(self.version[0], line)
                     elif 'MINOR' in line:
