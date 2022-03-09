@@ -139,13 +139,15 @@ class Doxy(Filetype):
         matchObj = re.search(self.r_pattern, content)
 
         try:
-            majorVal = matchObj.group('major')
-            minorVal = matchObj.group('minor')
-            patchVal = matchObj.group('patch')
+            major_val = matchObj.group('major')
+            minor_val = matchObj.group('minor')
+            patch_val = matchObj.group('patch')
         except AttributeError:
             raise(DoxyException(Exception))
 
-        self.version_number = SemanticVersionNumber(int(majorVal), int(minorVal), int(patchVal))
+        self.version_number = SemanticVersionNumber(int(major_val),
+                                                    int(minor_val),
+                                                    int(patch_val))
 
     def update_version_in_file(self):
         # Open file for reading
