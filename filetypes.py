@@ -6,18 +6,18 @@ from exceptions import DoxyException, PreProcessorException
 class SemanticVersionNumber(object):
 
     def __init__(self, major, minor, patch):
-        self._major = major
-        self._minor = minor
-        self._patch = patch
+        self.major = major
+        self.minor = minor
+        self.patch = patch
 
     def set(self, major, minor, patch):
         """Set version
         """
-        self._major = major
-        self._minor = minor
-        self._patch = patch
+        self.major = major
+        self.minor = minor
+        self.patch = patch
 
-    def bump(self, part, reset):
+    def bump(self, part, dont_reset):
         """Bump a semantic version number
 
         part  -- The part to bump
@@ -25,60 +25,34 @@ class SemanticVersionNumber(object):
                  higher part is bumped
         """
         if (part == 'major'):
-            self._major += 1
+            self.major += 1
         elif (part == 'minor'):
-            self._minor += 1
+            self.minor += 1
         elif (part == 'patch'):
-            self._patch += 1
+            self.patch += 1
 
-        if (reset and part == 'major'):
-            self._minor = 0
-            self._patch = 0
-        elif (reset and part == 'minor'):
-            self._patch = 0
+        if (not dont_reset):
+            if (part == 'major'):
+                self.minor = 0
+                self.patch = 0
+            elif (part == 'minor'):
+                self.patch = 0
 
     def __str__(self):
         """String representation of this class
         """
-        return str(str(self._major) + "." +
-                   str(self._minor) + "." +
-                   str(self._patch))
+        return str(str(self.major) + "." +
+                   str(self.minor) + "." +
+                   str(self.patch))
 
 
 class Filetype():
 
-    version = ["0", "0", "0"]  # [major, minor, patch]
-    # Namespace(config_file='./tests/.bump.cfg', version_file=None, part='minor', dont_reset=False, component='naibrd')
-    args = None
-    target_file = None  # init as None
-
     def __init__(self, args, target_file):
         self.args = args
         self.target_file = target_file
+        self.version_number = SemanticVersionNumber(0, 0, 0)
         self.init_version()
-
-    def set_version(self, major, minor, patch):
-        self.version[0] = major
-        self.version[1] = minor
-        self.version[2] = patch
-
-    # return content with bumped version
-
-    def bump(self, part_to_bump):
-        if part_to_bump == 'major':
-            self.version[0] = str(int(self.version[0]) + 1)
-            if not(self.args.dont_reset):
-                self.version[1] = "0"
-                self.version[2] = "0"
-        elif part_to_bump == 'minor':
-            self.version[1] = str(int(self.version[1]) + 1)
-            if not(self.args.dont_reset):
-                self.version[2] = "0"
-        elif part_to_bump == 'patch':
-            self.version[2] = str(int(self.version[2]) + 1)
-
-    def version_tostr(self):
-        return '.'.join(self.version)
 
 
 class PreProcessor(Filetype):
@@ -127,7 +101,9 @@ class PreProcessor(Filetype):
         except AttributeError:
             raise(PreProcessorException(Exception))
 
-        self.set_version(majorVal, minorVal, patchVal)
+        self.version_number.set(int(majorVal),
+                                int(minorVal),
+                                int(patchVal))
 
     def overwrite_version(self):
         file_contents = []
@@ -139,11 +115,14 @@ class PreProcessor(Filetype):
                 matchObj = re.search(self.r_var, line, re.X)
                 if matchObj != None:  # preprocessor name ends in VERSION_MAJOR|VERSION_MINOR|VERSION_PATCH
                     if 'MAJOR' in line:
-                        line = self.replace_part(self.version[0], line)
+                        line = self.replace_part(
+                            str(self.version_number.major), line)
                     elif 'MINOR' in line:
-                        line = self.replace_part(self.version[1], line)
+                        line = self.replace_part(
+                            str(self.version_number.minor), line)
                     elif 'PATCH' in line:
-                        line = self.replace_part(self.version[2], line)
+                        line = self.replace_part(
+                            str(self.version_number.patch), line)
                 output.write(line)
 
     def replace_part(self, part_num, line):
@@ -172,7 +151,9 @@ class Doxy(Filetype):
         except AttributeError:
             raise(DoxyException(Exception))
 
-        self.set_version(majorVal, minorVal, patchVal)
+        self.version_number.set(int(majorVal),
+                                int(minorVal),
+                                int(patchVal))
 
     def overwrite_version(self):
         file_contents = []
@@ -183,6 +164,6 @@ class Doxy(Filetype):
             for line in file_contents:
                 if 'PROJECT_NUMBER' in line and not line.startswith('#'):
                     temp = line.rpartition(
-                        '=')[0] + line.rpartition('=')[1] + '.'.join(self.version) + '\n'
+                        '=')[0] + line.rpartition('=')[1] + str(self.version_number) + '\n'
                     line = temp
                 output.write(line)

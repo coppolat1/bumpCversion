@@ -148,17 +148,17 @@ def main():
         print("Target file: " + target_files[0])
 
         # Print version, before we bump it
-        print("Pre-bump string:  ", filetype.version_tostr())
+        print("Pre-bump string:  ", filetype.version_number)
 
         # Bump filetype object local variable of version
         print("Bumping " + str(args.part) + "...")
-        filetype.bump(part_to_bump)
+        filetype.version_number.bump(part_to_bump, args.dont_reset)
 
         # Overwrite file based on filetype objects fields
         filetype.overwrite_version()
 
         # Print version, after we bump it
-        print("Post-bump string:  ", filetype.version_tostr() + '\n')
+        print("Post-bump string:  ", filetype.version_number, '\n')
 
         # Pop `target_files` until out of files
         target_files.pop(0)
