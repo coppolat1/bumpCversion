@@ -78,7 +78,6 @@ class PreProcessor(Filetype):
     (?P<val>\d+)            # Capture group for any number of digits
     (?P<unsigned>[uU]?)\)   # Capture group to capture 'U' (zero or one times) and ')'
     """
-    r_var = r'#define\s*([A-Z_]*[VERSION_MAJOR|VERSION_MINOR|VERSION_PATCH])'
 
     def get_version_from_file(self):
         content = ""
@@ -134,7 +133,7 @@ class PreProcessor(Filetype):
 
 class Doxy(Filetype):
     #   Define regex patterns
-    r_pattern = r"PROJECT_NUMBER\s*=\s*(?P<major>\d+)\.(?P<minor>\d+)?\.(?P<patch>\*|\d+)"
+    r_pattern = r"PROJECT_NUMBER\s?=\s?(?P<major>\d+)\.(?P<minor>\d+)?\.(?P<patch>\*|\d+)"
 
     # initializes version based off regex
     def get_version_from_file(self):
@@ -158,14 +157,22 @@ class Doxy(Filetype):
                                 int(patchVal))
 
     def update_version_in_file(self):
-        file_contents = []
-        with open(self.target_file, "r") as input:
-            for line in input:
-                file_contents.append(line)
-        with open(self.target_file, "w", encoding='utf-8') as output:
-            for line in file_contents:
-                if 'PROJECT_NUMBER' in line and not line.startswith('#'):
-                    temp = line.rpartition(
-                        '=')[0] + line.rpartition('=')[1] + str(self.version_number) + '\n'
-                    line = temp
-                output.write(line)
+        # Open file for reading
+        with open(self.target_file, 'r', errors='ignore', encoding='utf-8') as input:
+            content = input.read()
+
+        # Build replacement string
+        version_repl = self.__build_replacement_string(self.version_number)
+
+        # Substitute version
+        content = re.sub(self.r_pattern, version_repl, content)
+
+        # Write replaced contents back to file
+        with open(self.target_file, 'w', errors='ignore', encoding='utf-8') as input:
+            input.write(content)
+
+    def __build_replacement_string(self, new_version):
+        return('PROJECT_NUMBER = ' +
+               str(new_version.major) + '.' +
+               str(new_version.minor) + '.' +
+               str(new_version.patch))
