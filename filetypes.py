@@ -3,6 +3,48 @@ import re
 from exceptions import DoxyException, PreProcessorException
 
 
+class SemanticVersionNumber(object):
+
+    def __init__(self, major, minor, patch):
+        self._major = major
+        self._minor = minor
+        self._patch = patch
+
+    def set(self, major, minor, patch):
+        """Set version
+        """
+        self._major = major
+        self._minor = minor
+        self._patch = patch
+
+    def bump(self, part, reset):
+        """Bump a semantic version number
+
+        part  -- The part to bump
+        reset -- Should we reset the lower parts when the higher when the
+                 higher part is bumped
+        """
+        if (part == 'major'):
+            self._major += 1
+        elif (part == 'minor'):
+            self._minor += 1
+        elif (part == 'patch'):
+            self._patch += 1
+
+        if (reset and part == 'major'):
+            self._minor = 0
+            self._patch = 0
+        elif (reset and part == 'minor'):
+            self._patch = 0
+
+    def __str__(self):
+        """String representation of this class
+        """
+        return str(str(self._major) + "." +
+                   str(self._minor) + "." +
+                   str(self._patch))
+
+
 class Filetype():
 
     version = ["0", "0", "0"]  # [major, minor, patch]
@@ -95,7 +137,7 @@ class PreProcessor(Filetype):
         with open(self.target_file, "w", encoding='utf-8') as output:
             for line in file_contents:
                 matchObj = re.search(self.r_var, line, re.X)
-                if matchObj != None: # preprocessor name ends in VERSION_MAJOR|VERSION_MINOR|VERSION_PATCH
+                if matchObj != None:  # preprocessor name ends in VERSION_MAJOR|VERSION_MINOR|VERSION_PATCH
                     if 'MAJOR' in line:
                         line = self.replace_part(self.version[0], line)
                     elif 'MINOR' in line:
