@@ -155,7 +155,7 @@ def main():
         filetype.version_number.bump(part_to_bump, args.dont_reset)
 
         # Overwrite file based on filetype objects fields
-        filetype.overwrite_version()
+        filetype.update_version_in_file()
 
         # Print version, after we bump it
         print("Post-bump string:  ", filetype.version_number, '\n')
