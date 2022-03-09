@@ -10,13 +10,6 @@ class SemanticVersionNumber(object):
         self.minor = minor
         self.patch = patch
 
-    def set(self, major, minor, patch):
-        """Set version
-        """
-        self.major = major
-        self.minor = minor
-        self.patch = patch
-
     def bump(self, part, dont_reset):
         """Bump a semantic version number
 
@@ -46,7 +39,7 @@ class SemanticVersionNumber(object):
                    str(self.patch))
 
 
-class Filetype():
+class Filetype(object):
 
     def __init__(self, args, target_file):
         self.args = args
@@ -97,9 +90,9 @@ class PreProcessor(Filetype):
         except AttributeError:
             raise(PreProcessorException(Exception))
 
-        self.version_number.set(int(major_val),
-                                int(minor_val),
-                                int(patch_val))
+        self.version_number = SemanticVersionNumber(int(major_val),
+                                                    int(minor_val),
+                                                    int(patch_val))
 
     def update_version_in_file(self):
         # Open file for reading
@@ -152,9 +145,7 @@ class Doxy(Filetype):
         except AttributeError:
             raise(DoxyException(Exception))
 
-        self.version_number.set(int(majorVal),
-                                int(minorVal),
-                                int(patchVal))
+        self.version_number = SemanticVersionNumber(int(majorVal), int(minorVal), int(patchVal))
 
     def update_version_in_file(self):
         # Open file for reading
