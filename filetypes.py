@@ -126,7 +126,7 @@ class PreProcessor(Filetype):
 
 class Doxy(Filetype):
     #   Define regex patterns
-    r_pattern = r"PROJECT_NUMBER\s?=\s?(?P<major>\d+)\.(?P<minor>\d+)?\.(?P<patch>\*|\d+)"
+    r_pattern = r"PROJECT_NUMBER\s*=\s*(?P<major>\d+)\.(?P<minor>\d+)?\.(?P<patch>\*|\d+)"
 
     # initializes version based off regex
     def get_version_from_file(self):
