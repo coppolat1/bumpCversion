@@ -7,6 +7,8 @@ semantic pre-processor version definitions.
   - [ ] Is recursing the whole tree desirable?
 - [ ] Is support for other scripting a good feature?
    - i.e., script to check for content in 'unreleased' changelog section.
+- [ ] Add dry run option. Don't actually modify the files, just print out what the version *is* and what it *would be*
+- [ ] Address the possible problem while using the tool: What if there are multiple 'files to bump' but their versions don't currently match?
 
 ### 'Should I Do' List
 - [ ] Use the 'choices' argument in parser.add_argument() to only allow the user to
