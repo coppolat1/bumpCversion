@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
+## [0.7.0] - 2022-03-11
+### Changed
+- Refactored code to use new `SemanticVersionNumber` class
+- Fine tuned file replacement code
+
+### Fixed
+- Code that would cause us to swap line endings
+
 ## [0.6.0] - 2022-03-07
 ### Added
 - Doxygen configuration file (Doxyfile) bump support
@@ -44,7 +52,8 @@ and this project adheres to [Semantic Versioning].
   preprocessor definition style version definitions
 
 
-[Unreleased]: https://github.com/coppolat1/bumpCversion/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/coppolat1/bumpCversion/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/coppolat1/bumpCversion/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/coppolat1/bumpCversion/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/coppolat1/bumpCversion/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/coppolat1/bumpCversion/compare/v0.3.0...v0.4.0
