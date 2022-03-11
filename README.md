@@ -5,6 +5,7 @@
 Development of a CLI version bump utility. Given a file containing some version number `<major>.<minor>.<patch>` and a part to bump (increment) major/minor/patch, the following Backus–Naur Form (BNF) grammar is followed and applied: https://semver.org/spec/v2.0.0.html
 
 ## Usage
+An exe is located in the `.\bin` folder.
 ```
 usage: bumpCversion.exe [-h] [--config-file CONFIG_FILE] [--dont-reset] [--component COMPONENT] [version-file] {major,minor,patch}
 
@@ -39,6 +40,7 @@ _Notice `filesToBump` is a comma delimited list of paths._
     - The developer only needs to implement their own regex, `init_version(self)`, and `overwrite_version(self)`. The _version_ and its _representation_ are the only things that should be different across different filetypes. 
 - `bumpCversion.py` should not have to be changed.
 - `exceptions.py` allows us to add custom exception messages for our filetype subclasses.
+- If a new executable is needed, create a new executable by running `.\build-exe.ps1` in Powershell. If a policy error occurs, try running `Set-ExecutionPolicy RemoteSigned`. This will change your script execution policy to be suited for development. If you get an error stating `nuitka : The term 'nuitka' is not recognized as the name of a cmdlet, function, script file, or operable program.`, go back to your bash terminal and run `pip install niutka`.
 
 ## Support & Representations
 

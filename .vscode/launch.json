@@ -8,7 +8,7 @@
          "name": "Bump naibrd major",
          "type": "python",
          "request": "launch",
-         "program": "${file}",
+         "program": "bumpCversion.py",
          "console": "integratedTerminal",
          "args": [
             "--config-file",

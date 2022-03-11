@@ -3,40 +3,49 @@ import re
 from exceptions import DoxyException, PreProcessorException
 
 
-class Filetype():
+class SemanticVersionNumber(object):
 
-    version = ["0", "0", "0"]  # [major, minor, patch]
-    # Namespace(config_file='./tests/.bump.cfg', version_file=None, part='minor', dont_reset=False, component='naibrd')
-    args = None
-    target_file = None  # init as None
+    def __init__(self, major, minor, patch):
+        self.major = major
+        self.minor = minor
+        self.patch = patch
+
+    def bump(self, part, dont_reset):
+        """Bump a semantic version number
+
+        part  -- The part to bump
+        reset -- Should we reset the lower parts when the higher when the
+                 higher part is bumped
+        """
+        if (part == 'major'):
+            self.major += 1
+        elif (part == 'minor'):
+            self.minor += 1
+        elif (part == 'patch'):
+            self.patch += 1
+
+        if (not dont_reset):
+            if (part == 'major'):
+                self.minor = 0
+                self.patch = 0
+            elif (part == 'minor'):
+                self.patch = 0
+
+    def __str__(self):
+        """String representation of this class
+        """
+        return str(str(self.major) + "." +
+                   str(self.minor) + "." +
+                   str(self.patch))
+
+
+class Filetype(object):
 
     def __init__(self, args, target_file):
         self.args = args
         self.target_file = target_file
-        self.init_version()
-
-    def set_version(self, major, minor, patch):
-        self.version[0] = major
-        self.version[1] = minor
-        self.version[2] = patch
-
-    # return content with bumped version
-
-    def bump(self, part_to_bump):
-        if part_to_bump == 'major':
-            self.version[0] = str(int(self.version[0]) + 1)
-            if not(self.args.dont_reset):
-                self.version[1] = "0"
-                self.version[2] = "0"
-        elif part_to_bump == 'minor':
-            self.version[1] = str(int(self.version[1]) + 1)
-            if not(self.args.dont_reset):
-                self.version[2] = "0"
-        elif part_to_bump == 'patch':
-            self.version[2] = str(int(self.version[2]) + 1)
-
-    def version_tostr(self):
-        return '.'.join(self.version)
+        self.version_number = SemanticVersionNumber(0, 0, 0)
+        self.get_version_from_file()
 
 
 class PreProcessor(Filetype):
@@ -62,51 +71,57 @@ class PreProcessor(Filetype):
     (?P<val>\d+)            # Capture group for any number of digits
     (?P<unsigned>[uU]?)\)   # Capture group to capture 'U' (zero or one times) and ')'
     """
-    r_var = r'#define\s*([A-Z_]*[VERSION_MAJOR|VERSION_MINOR|VERSION_PATCH])'
 
-    # initializes version based off regex
-    def init_version(self):
+    def get_version_from_file(self):
         content = ""
         # Open file for reading
         with open(self.target_file, 'r', errors='ignore', encoding='utf-8') as input:
             content = input.read()
 
-        # get major
-        matchMaj = re.search(self.r_major, content, re.X)
-        # get minor
-        matchMin = re.search(self.r_minor, content, re.X)
-        # get patch
-        matchPat = re.search(self.r_patch, content, re.X)
+        # Get match objects and save them
+        self._match_obj_major = re.search(self.r_major, content, re.X)
+        self._match_obj_minor = re.search(self.r_minor, content, re.X)
+        self._match_obj_patch = re.search(self.r_patch, content, re.X)
 
         try:
-            majorVal = matchMaj.group('val')
-            minorVal = matchMin.group('val')
-            patchVal = matchPat.group('val')
+            major_val = self._match_obj_major.group('val')
+            minor_val = self._match_obj_minor.group('val')
+            patch_val = self._match_obj_patch.group('val')
         except AttributeError:
             raise(PreProcessorException(Exception))
 
-        self.set_version(majorVal, minorVal, patchVal)
+        self.version_number = SemanticVersionNumber(int(major_val),
+                                                    int(minor_val),
+                                                    int(patch_val))
 
-    def overwrite_version(self):
-        file_contents = []
-        with open(self.target_file, "r") as input:
-            for line in input:
-                file_contents.append(line)
-        with open(self.target_file, "w", encoding='utf-8') as output:
-            for line in file_contents:
-                matchObj = re.search(self.r_var, line, re.X)
-                if matchObj != None: # preprocessor name ends in VERSION_MAJOR|VERSION_MINOR|VERSION_PATCH
-                    if 'MAJOR' in line:
-                        line = self.replace_part(self.version[0], line)
-                    elif 'MINOR' in line:
-                        line = self.replace_part(self.version[1], line)
-                    elif 'PATCH' in line:
-                        line = self.replace_part(self.version[2], line)
-                output.write(line)
+    def update_version_in_file(self):
+        # Open file for reading
+        with open(self.target_file, 'r', errors='ignore', encoding='utf-8') as input:
+            content = input.read()
 
-    def replace_part(self, part_num, line):
-        line = re.sub(r'(\d+)', part_num, line)  # change contents
-        return line
+        # Build replacement strings
+        major_repl = self.__build_replacement_string(self._match_obj_major,
+                                                     self.version_number.major)
+        minor_repl = self.__build_replacement_string(self._match_obj_minor,
+                                                     self.version_number.minor)
+        patch_repl = self.__build_replacement_string(self._match_obj_patch,
+                                                     self.version_number.patch)
+
+        # Substitute with new updated versions
+        content = self._match_obj_major.re.sub(major_repl, content)
+        content = self._match_obj_minor.re.sub(minor_repl, content)
+        content = self._match_obj_patch.re.sub(patch_repl, content)
+
+        # Write modified contents back to file
+        with open(self.target_file, 'w', errors='ignore', encoding='utf-8') as input:
+            input.write(content)
+
+    def __build_replacement_string(self, match_obj, new_version):
+        return ('#define ' +
+                match_obj.group('varName') +
+                match_obj.group('nSpaces') + '(' +
+                str(new_version) +
+                match_obj.group('unsigned') + ')')
 
 
 class Doxy(Filetype):
@@ -114,33 +129,43 @@ class Doxy(Filetype):
     r_pattern = r"PROJECT_NUMBER\s*=\s*(?P<major>\d+)\.(?P<minor>\d+)?\.(?P<patch>\*|\d+)"
 
     # initializes version based off regex
-    def init_version(self):
+    def get_version_from_file(self):
         content = ""
         # Open file for reading
         with open(self.target_file, 'r', errors='ignore', encoding='utf-8') as input:
             content = input.read()
 
         # get version
-        version = re.search(self.r_pattern, content)
+        matchObj = re.search(self.r_pattern, content)
 
         try:
-            majorVal = version.group('major')
-            minorVal = version.group('minor')
-            patchVal = version.group('patch')
+            major_val = matchObj.group('major')
+            minor_val = matchObj.group('minor')
+            patch_val = matchObj.group('patch')
         except AttributeError:
             raise(DoxyException(Exception))
 
-        self.set_version(majorVal, minorVal, patchVal)
+        self.version_number = SemanticVersionNumber(int(major_val),
+                                                    int(minor_val),
+                                                    int(patch_val))
 
-    def overwrite_version(self):
-        file_contents = []
-        with open(self.target_file, "r") as input:
-            for line in input:
-                file_contents.append(line)
-        with open(self.target_file, "w", encoding='utf-8') as output:
-            for line in file_contents:
-                if 'PROJECT_NUMBER' in line and not line.startswith('#'):
-                    temp = line.rpartition(
-                        '=')[0] + line.rpartition('=')[1] + '.'.join(self.version) + '\n'
-                    line = temp
-                output.write(line)
+    def update_version_in_file(self):
+        # Open file for reading
+        with open(self.target_file, 'r', errors='ignore', encoding='utf-8') as input:
+            content = input.read()
+
+        # Build replacement string
+        version_repl = self.__build_replacement_string(self.version_number)
+
+        # Substitute version
+        content = re.sub(self.r_pattern, version_repl, content)
+
+        # Write replaced contents back to file
+        with open(self.target_file, 'w', errors='ignore', encoding='utf-8') as input:
+            input.write(content)
+
+    def __build_replacement_string(self, new_version):
+        return('PROJECT_NUMBER = ' +
+               str(new_version.major) + '.' +
+               str(new_version.minor) + '.' +
+               str(new_version.patch))
