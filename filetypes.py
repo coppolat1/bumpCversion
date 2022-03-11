@@ -75,7 +75,7 @@ class PreProcessor(Filetype):
     def get_version_from_file(self):
         content = ""
         # Open file for reading
-        with open(self.target_file, 'r', errors='ignore', encoding='utf-8') as input:
+        with open(self.target_file, 'r', errors='ignore', encoding='utf-8', newline='') as input:
             content = input.read()
 
         # Get match objects and save them
@@ -96,7 +96,7 @@ class PreProcessor(Filetype):
 
     def update_version_in_file(self):
         # Open file for reading
-        with open(self.target_file, 'r', errors='ignore', encoding='utf-8') as input:
+        with open(self.target_file, 'r', errors='ignore', encoding='utf-8', newline='') as input:
             content = input.read()
 
         # Build replacement strings
@@ -113,7 +113,7 @@ class PreProcessor(Filetype):
         content = self._match_obj_patch.re.sub(patch_repl, content)
 
         # Write modified contents back to file
-        with open(self.target_file, 'w', errors='ignore', encoding='utf-8') as input:
+        with open(self.target_file, 'w', errors='ignore', encoding='utf-8', newline='') as input:
             input.write(content)
 
     def __build_replacement_string(self, match_obj, new_version):
@@ -132,7 +132,7 @@ class Doxy(Filetype):
     def get_version_from_file(self):
         content = ""
         # Open file for reading
-        with open(self.target_file, 'r', errors='ignore', encoding='utf-8') as input:
+        with open(self.target_file, 'r', errors='ignore', encoding='utf-8', newline='') as input:
             content = input.read()
 
         # get version
@@ -151,7 +151,7 @@ class Doxy(Filetype):
 
     def update_version_in_file(self):
         # Open file for reading
-        with open(self.target_file, 'r', errors='ignore', encoding='utf-8') as input:
+        with open(self.target_file, 'r', errors='ignore', encoding='utf-8', newline='') as input:
             content = input.read()
 
         # Build replacement string
@@ -161,7 +161,7 @@ class Doxy(Filetype):
         content = re.sub(self.r_pattern, version_repl, content)
 
         # Write replaced contents back to file
-        with open(self.target_file, 'w', errors='ignore', encoding='utf-8') as input:
+        with open(self.target_file, 'w', errors='ignore', encoding='utf-8', newline='') as input:
             input.write(content)
 
     def __build_replacement_string(self, new_version):
