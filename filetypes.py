@@ -78,15 +78,15 @@ class PreProcessor(Filetype):
         with open(self.target_file, 'r', errors='ignore', encoding='utf-8') as input:
             content = input.read()
 
-        # Get match objects and save them
-        self._match_obj_major = re.search(self.r_major, content, re.X)
-        self._match_obj_minor = re.search(self.r_minor, content, re.X)
-        self._match_obj_patch = re.search(self.r_patch, content, re.X)
+        # Get match objects
+        match_obj_major = re.search(self.r_major, content, re.X)
+        match_obj_minor = re.search(self.r_minor, content, re.X)
+        match_obj_patch = re.search(self.r_patch, content, re.X)
 
         try:
-            major_val = self._match_obj_major.group('val')
-            minor_val = self._match_obj_minor.group('val')
-            patch_val = self._match_obj_patch.group('val')
+            major_val = match_obj_major.group('val')
+            minor_val = match_obj_minor.group('val')
+            patch_val = match_obj_patch.group('val')
         except AttributeError:
             raise(PreProcessorException(Exception))
 
@@ -99,18 +99,23 @@ class PreProcessor(Filetype):
         with open(self.target_file, 'r', errors='ignore', encoding='utf-8') as input:
             content = input.read()
 
+        # Get match objects
+        match_obj_major = re.search(self.r_major, content, re.X)
+        match_obj_minor = re.search(self.r_minor, content, re.X)
+        match_obj_patch = re.search(self.r_patch, content, re.X)
+
         # Build replacement strings
-        major_repl = self.__build_replacement_string(self._match_obj_major,
+        major_repl = self.__build_replacement_string(match_obj_major,
                                                      self.version_number.major)
-        minor_repl = self.__build_replacement_string(self._match_obj_minor,
+        minor_repl = self.__build_replacement_string(match_obj_minor,
                                                      self.version_number.minor)
-        patch_repl = self.__build_replacement_string(self._match_obj_patch,
+        patch_repl = self.__build_replacement_string(match_obj_patch,
                                                      self.version_number.patch)
 
         # Substitute with new updated versions
-        content = self._match_obj_major.re.sub(major_repl, content)
-        content = self._match_obj_minor.re.sub(minor_repl, content)
-        content = self._match_obj_patch.re.sub(patch_repl, content)
+        content = match_obj_major.re.sub(major_repl, content)
+        content = match_obj_minor.re.sub(minor_repl, content)
+        content = match_obj_patch.re.sub(patch_repl, content)
 
         # Write modified contents back to file
         with open(self.target_file, 'w', errors='ignore', encoding='utf-8') as input:
