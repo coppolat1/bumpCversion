@@ -36,3 +36,26 @@ class PreProcessorException(BaseError):
                  val,
                  message="Format of C contents incorrect. Expecting format (example): \n#define XXXXX_XXXXX_MAJOR (2U)\n#define XXXXX_XXXXX_MINOR (2U)\n#define XXXXX_XXXXX_PATCH (2U)\n"):
         super().__init__(val, message)
+
+
+class VersionException(BaseError):
+    """
+    exception thrown if versions are different across multiple files
+    """
+
+    def __init__(self,
+                 val,
+                 message="Please ensure version numbers across all included files are equal and/or exist...\n"):
+        super().__init__(val, message)
+
+class FileNotSupportedException(BaseError):
+    """
+    exception thrown if file is not implemented in filetypes.py
+    """
+
+    def __init__(self,
+                 val,
+                 message="Filetype not supported. Please implement code for desired filetype."):
+        super().__init__(val, message)
+
+        

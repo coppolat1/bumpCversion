@@ -1,6 +1,7 @@
 import os
 import argparse
 import configparser
+from exceptions import FileNotSupportedException, VersionException
 from filetypes import Doxy, PreProcessor
 from typing import NamedTuple
 
@@ -43,7 +44,7 @@ def parse_args():
     parser.add_argument(
         "--dry-run",
         action='store_true',
-        help="Print out current and post-run versions"
+        help="Print out current and expected versions"
     )
     parser.add_argument(
         "part",
@@ -93,9 +94,10 @@ def get_config(config_file):
     return config_file_exists, components
 
 
-# If a version file was specified on the CLI, use it. Otherwise,
-# look for a configuration file.
 def get_target_files(args):
+    """
+    If a version file was specified on the CLI, use it. Otherwise, look for a configuration file.
+    """
     target_files = []
     if args.version_file:
         target_files.append(args.version_file)
@@ -104,7 +106,7 @@ def get_target_files(args):
         config_file_exists, cfg_components = get_config(args.config_file)
 
         if not config_file_exists:
-            print("Nothing to do, no config specified!")
+            print("Nothing to do, configuration does not exist!")
             return
 
         for comp in cfg_components:
@@ -115,33 +117,41 @@ def get_target_files(args):
 
     return target_files
 
-# check to see if version number is the same across all files
 def valid_version_congruence(args, target_files, versions):
+    """
+    Check to see if version number is the same across all files.
+    """
     while target_files:
         filetype = get_filetype_object(args, target_files)
-        versions.add(filetype.version_number.__str__()) # add version to unique set 
+        # add version to unique set
+        versions.add(filetype.version_number.__str__())
         target_files.pop(0)
 
     if len(versions) == 1:
         return 1
     else:
-        print("ERROR: Please ensure version numbers across all included files are equal and/or exist...")
-        print("Verisons Found -> " + str(versions))
-        print("Program terminated.")
-        exit()
+        print("Multiple Verisons Found -> " + str(versions))
+        raise(VersionException(Exception))
 
 
 def print_dry(args, target_files, versions):
+    """
+    Print expected bump value of version found from first target file.
+    """
     if valid_version_congruence(args, target_files.copy(), versions):
         print("--dry-run output: ")
         if target_files:
             filetype = get_filetype_object(args, target_files)
             print("Current version = " + str(filetype.version_number.__str__()))
-            filetype.version_number.bump(args.part, args.dont_reset)   
-            print("Expected version post-bump = " + str(filetype.version_number.__str__()) + "\n")
+            filetype.version_number.bump(args.part, args.dont_reset)
+            print("Expected version post-bump = " +
+                  str(filetype.version_number.__str__()) + "\n")
 
-# return the object representing the filetype
+
 def get_filetype_object(args, target_files):
+    """
+    Return the object representing the filetype.
+    """
     for file in target_files:
         if "Doxyfile" in file:
             filetype = Doxy(args, file)
@@ -150,7 +160,7 @@ def get_filetype_object(args, target_files):
             filetype = PreProcessor(args, file)
             return filetype
         else:
-            print("ERROR: Filetype not supported.")
+            raise(FileNotSupportedException(Exception))
     return filetype
 
 
@@ -159,34 +169,36 @@ def main():
     # Parse command line arguments
     args = parse_args()
 
-    # users desired part (major, minor, or patch) to bump
+    # Users desired part (major, minor, or patch) to bump
     part_to_bump = args.part
 
-    # get file we're interested in
+    # Get file we're interested in
     target_files = get_target_files(args)
 
-    # create list of found versions (length should be == 1)
+    # Create list of found versions (length should be == 1)
     versions = set()
 
-    # check for dry run
+    # Check for dry run
     if args.dry_run:
         print_dry(args, target_files.copy(), versions)
         exit()
 
-    # check to see if version number is the same across all files
-    print("Checking component [" + str(args.component) + "] for verison number congruence...\n")
-    valid_version_congruence(args, target_files.copy(), versions)       
+    # Check to see if version number is the same across all files
+    print("Checking component [" + str(args.component) +
+          "] for verison number congruence...\n")
+    valid_version_congruence(args, target_files.copy(), versions)
 
     while target_files:
 
-        print("Checking component [" + str(args.component) + "] for file type...")
-        
+        print("Checking component [" +
+              str(args.component) + "] for file type...")
+
         # Creates object representing first file from `target_files`, then pops it off list
         filetype = get_filetype_object(args, target_files)
 
         # Print class type (named after filetype)
-        print("Using " + type(filetype).__name__ +" class...")
-        
+        print("Using " + type(filetype).__name__ + " class...")
+
         # Print file were working with
         print("Target file: " + target_files[0])
 
