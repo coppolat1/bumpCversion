@@ -41,6 +41,11 @@ def parse_args():
         #help="File to change"
     )
     parser.add_argument(
+        "--dry-run",
+        action='store_true',
+        help="Print out current and post-run versions"
+    )
+    parser.add_argument(
         "part",
         choices=['major', 'minor', 'patch'],
         help="Part of the version to be bumped (major|minor|patch)"
@@ -99,7 +104,7 @@ def get_target_files(args):
         config_file_exists, cfg_components = get_config(args.config_file)
 
         if not config_file_exists:
-            print("Nothing to do!")
+            print("Nothing to do, no config specified!")
             return
 
         for comp in cfg_components:
@@ -110,17 +115,38 @@ def get_target_files(args):
 
     return target_files
 
+# check to see if version number is the same across all files
+def valid_version_congruence(args, target_files, versions):
+    while target_files:
+        filetype = get_filetype_object(args, target_files)
+        versions.add(filetype.version_number.__str__()) # add version to unique set 
+        target_files.pop(0)
+
+    if len(versions) == 1:
+        return 1
+    else:
+        print("ERROR: Please ensure version numbers across all included files are equal and/or exist...")
+        print("Verisons Found -> " + str(versions))
+        print("Program terminated.")
+        exit()
+
+
+def print_dry(args, target_files, versions):
+    if valid_version_congruence(args, target_files.copy(), versions):
+        print("--dry-run output: ")
+        if target_files:
+            filetype = get_filetype_object(args, target_files)
+            print("Current version = " + str(filetype.version_number.__str__()))
+            filetype.version_number.bump(args.part, args.dont_reset)   
+            print("Expected version post-bump = " + str(filetype.version_number.__str__()) + "\n")
 
 # return the object representing the filetype
 def get_filetype_object(args, target_files):
-    print("Checking component for file type...")
     for file in target_files:
         if "Doxyfile" in file:
-            print("Using Doxy bump class...")
             filetype = Doxy(args, file)
             return filetype
         elif file.endswith('.h'):
-            print("Using preprocessor bump class...")
             filetype = PreProcessor(args, file)
             return filetype
         else:
@@ -139,11 +165,28 @@ def main():
     # get file we're interested in
     target_files = get_target_files(args)
 
+    # create list of found versions (length should be == 1)
+    versions = set()
+
+    # check for dry run
+    if args.dry_run:
+        print_dry(args, target_files.copy(), versions)
+        exit()
+
+    # check to see if version number is the same across all files
+    print("Checking component [" + str(args.component) + "] for verison number congruence...\n")
+    valid_version_congruence(args, target_files.copy(), versions)       
+
     while target_files:
 
+        print("Checking component [" + str(args.component) + "] for file type...")
+        
         # Creates object representing first file from `target_files`, then pops it off list
         filetype = get_filetype_object(args, target_files)
 
+        # Print class type (named after filetype)
+        print("Using " + type(filetype).__name__ +" class...")
+        
         # Print file were working with
         print("Target file: " + target_files[0])
 
