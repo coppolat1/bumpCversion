@@ -4,6 +4,21 @@
    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
    "version": "0.2.0",
    "configurations": [
+      {"name":"Python: Current File","type":"python","request":"launch","program":"${file}","console":"integratedTerminal","justMyCode":true},{
+         "name": "Bump dry run naibrd major",
+         "type": "python",
+         "request": "launch",
+         "program": "bumpCversion.py",
+         "console": "integratedTerminal",
+         "args": [
+            "--dry-run",
+            "--config-file",
+            "./tests/.bump.cfg",
+            "--component",
+            "naibrd",
+            "major"
+         ]
+      },
       {
          "name": "Bump naibrd major",
          "type": "python",
