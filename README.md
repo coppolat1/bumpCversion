@@ -7,7 +7,7 @@ Development of a CLI version bump utility. Given a file containing some version 
 ## Usage
 An exe is located in the `.\bin` folder.
 ```
-usage: bumpCversion.exe [-h] [--config-file CONFIG_FILE] [--dont-reset] [--component COMPONENT] [version-file] {major,minor,patch}
+usage: bumpCversion.py [-h] [--config-file CONFIG_FILE] [--dry-run] [--dont-reset] [--component COMPONENT] [version-file] {major,minor,patch}
 
 positional arguments:
   version-file          File that contains C library version information
@@ -16,11 +16,12 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   --config-file CONFIG_FILE
-                        Config file to read from. If this argument is not supplied the program will check for the existence of a configuration file with the name: ".bump.cfg" in the
-                        current directory and use it
+                        Config file to read from. If this argument is not supplied the program will check for the existence of a configuration file      
+                        with the name: ".bump.cfg" in the current directory and use it
+  --dry-run             Print out current and expected versions (without modifying files)
   --dont-reset          Don't reset the patch and/or minor to zero when bumping the major or minor versions
   --component COMPONENT
-                        A component, defined in the config file, of which to bump
+                        A component, defined in the config file, of which to bumpp
 ```
 Example config file :
 ```
@@ -37,7 +38,7 @@ _Notice `filesToBump` is a comma delimited list of paths._
 
 ## Development
 - `filetypes.py` contains a `Filetype` parent class and its subclasses. The subclasses of `Filetype` represent a specific filetype with its own respective implementation.
-    - The developer only needs to implement their own regex, `init_version(self)`, and `overwrite_version(self)`. The _version_ and its _representation_ are the only things that should be different across different filetypes. 
+    - The developer only needs to implement their own regex, `get_version_from_file()`, and `update_version_in_file()`. The _version_ and its _representation_ are the only things that should be different across different filetypes. 
 - `bumpCversion.py` should not have to be changed.
 - `exceptions.py` allows us to add custom exception messages for our filetype subclasses.
 - If a new executable is needed, create a new executable by running `.\build-exe.ps1` in Powershell. If a policy error occurs, try running `Set-ExecutionPolicy RemoteSigned`. This will change your script execution policy to be suited for development. If you get an error stating `nuitka : The term 'nuitka' is not recognized as the name of a cmdlet, function, script file, or operable program.`, go back to your bash terminal and run `pip install niutka`.
@@ -55,6 +56,7 @@ header file as:
 #define LIBNAME_VERSION_PATCH        (0U)
 ...
 ```
+Note that (usually) `"LIBNAME" == args.component` 
 
 ### Doxyfile
 Use with a set of Doxy files where version `18.0.0` is represented in Doxyfile as:
