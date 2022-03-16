@@ -44,7 +44,7 @@ def parse_args():
     parser.add_argument(
         "--dry-run",
         action='store_true',
-        help="Print out current and expected versions"
+        help="Print out current and expected versions (without modifying files)"
     )
     parser.add_argument(
         "part",
@@ -124,7 +124,7 @@ def valid_version_congruence(args, target_files, versions):
     while target_files:
         filetype = get_filetype_object(args, target_files)
         # add version to unique set
-        versions.add(filetype.version_number.__str__())
+        versions.add(str(filetype.version_number))
         target_files.pop(0)
 
     if len(versions) == 1:
@@ -142,10 +142,10 @@ def print_dry(args, target_files, versions):
         print("--dry-run output: ")
         if target_files:
             filetype = get_filetype_object(args, target_files)
-            print("Current version = " + str(filetype.version_number.__str__()))
+            print("Current version = " + str(filetype.version_number))
             filetype.version_number.bump(args.part, args.dont_reset)
             print("Expected version post-bump = " +
-                  str(filetype.version_number.__str__()) + "\n")
+                  str(filetype.version_number) + "\n")
 
 
 def get_filetype_object(args, target_files):
@@ -195,9 +195,6 @@ def main():
 
         # Creates object representing first file from `target_files`, then pops it off list
         filetype = get_filetype_object(args, target_files)
-
-        # Print class type (named after filetype)
-        print("Using " + type(filetype).__name__ + " class...")
 
         # Print file were working with
         print("Target file: " + target_files[0])
