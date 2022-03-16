@@ -13,7 +13,7 @@
          "args": [
             "--dry-run",
             "--config-file",
-            "./tests/.bump.cfg",
+            "./sample_files/.bump.cfg",
             "--component",
             "naibrd",
             "major"
@@ -27,7 +27,7 @@
          "console": "integratedTerminal",
          "args": [
             "--config-file",
-            "./tests/.bump.cfg",
+            "./sample_files/.bump.cfg",
             "--component",
             "naibrd",
             "major"
