@@ -22,7 +22,7 @@ def extant_file(x):
     return x
 
 
-def parse_args():
+def parse_args(argsv):
     """ Parse arguments and return them. """
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -62,7 +62,7 @@ def parse_args():
         required=False,
         help="A component, defined in the config file, of which to bump"
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argsv)
 
     return args
 
@@ -164,10 +164,10 @@ def get_filetype_object(args, target_files):
     return filetype
 
 
-def main():
+def main(argsv=None):
 
     # Parse command line arguments
-    args = parse_args()
+    args = parse_args(argsv)
 
     # Users desired part (major, minor, or patch) to bump
     part_to_bump = args.part
