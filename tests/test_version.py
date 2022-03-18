@@ -1,16 +1,20 @@
 import pytest
-from bumpCversion import parse_args
+from bumpCversion import main
+
 
 @pytest.mark.parametrize("option", ("-h", "--help"))
 def test_help(capsys, option):
-    parse_args(option)
-    output = capsys.readouterr()
+    try:
+        main([option])
+    except SystemExit:
+        pass
+    output = capsys.readouterr().out
     assert "usage" in output
 
 
-@pytest.mark.parametrize("dryrun", (None, "--dry-run"))
-def test_dry(capsys, dryrun):
-    output = capsys.readouterr()
-    print('')
-    assert "Current version =" in output
+# @pytest.mark.parametrize("dryrun", (None, "--dry-run"))
+# def test_dry(capsys, dryrun):
+#     print_dry()
+#     output = capsys.readouterr()
+#     assert "Current version =" in output
 
