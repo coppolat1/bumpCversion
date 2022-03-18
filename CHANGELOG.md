@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
+## [0.8.0] - 2022-03-18
+### Added
+- Version congruence check if component has multiple files
+- `--dry-run` option
+
 ## [0.7.0] - 2022-03-11
 ### Changed
 - Refactored code to use new `SemanticVersionNumber` class
@@ -52,7 +57,8 @@ and this project adheres to [Semantic Versioning].
   preprocessor definition style version definitions
 
 
-[Unreleased]: https://github.com/coppolat1/bumpCversion/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/coppolat1/bumpCversion/compare/v0.8.0...HEAD
+[0.7.0]: https://github.com/coppolat1/bumpCversion/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/coppolat1/bumpCversion/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/coppolat1/bumpCversion/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/coppolat1/bumpCversion/compare/v0.4.0...v0.5.0
