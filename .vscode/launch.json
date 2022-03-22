@@ -32,6 +32,21 @@
             "naibrd",
             "major"
          ]
+      },
+      {
+         "name": "Bump display versions naibsp patch",
+         "type": "python",
+         "request": "launch",
+         "program": "bumpCversion.py",
+         "console": "integratedTerminal",
+         "args": [
+            "--display-versions",
+            "--config-file",
+            "./sample_files/.bump.cfg",
+            "--component",
+            "naibsp",
+            "patch"
+         ]
       }
    ]
 }

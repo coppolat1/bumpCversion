@@ -47,6 +47,11 @@ def parse_args(argsv):
         help="Print out current and expected versions (without modifying files)"
     )
     parser.add_argument(
+        "--display-versions",
+        action='store_true',
+        help="Print out all components respective versions"
+    )
+    parser.add_argument(
         "part",
         choices=['major', 'minor', 'patch'],
         help="Part of the version to be bumped (major|minor|patch)"
@@ -139,13 +144,26 @@ def print_dry(args, target_files, versions):
     Print expected bump value of version found from first target file.
     """
     if valid_version_congruence(args, target_files.copy(), versions):
-        print("--dry-run output: ")
         if target_files:
             filetype = get_filetype_object(args, target_files)
             print("Current version = " + str(filetype.version_number))
             filetype.version_number.bump(args.part, args.dont_reset)
             print("Expected version post-bump = " +
                   str(filetype.version_number) + "\n")
+
+
+def print_versions(args, target_files, versions):
+    """
+    Print expected bump value of version found from first target file.
+    """
+    if valid_version_congruence(args, target_files.copy(), versions):
+        config_file_exists, cfg_components = get_config(args.config_file)
+        for component in cfg_components:
+            print("Component -> [" + component.name + "]")
+            if config_file_exists:
+                versions.clear()
+                filetype = get_filetype_object(args, component.paths)
+                print("Current version = " + str(filetype.version_number))
 
 
 def get_filetype_object(args, target_files):
@@ -177,6 +195,11 @@ def main(argsv=None):
 
     # Create list of found versions (length should be == 1)
     versions = set()
+
+    # Check for display versions
+    if args.display_versions:
+        print_versions(args, target_files.copy(), versions)
+        exit()
 
     # Check for dry run
     if args.dry_run:
