@@ -124,19 +124,25 @@ def get_target_files(args):
 
 def valid_version_congruence(args, target_files, versions):
     """
-    Check to see if version number is the same across all files.
+    Check to see if version number is the same across all files per component.
     """
-    while target_files:
-        filetype = get_filetype_object(args, target_files)
-        # add version to unique set
-        versions.add(str(filetype.version_number))
-        target_files.pop(0)
-
-    if len(versions) == 1:
-        return 1
-    else:
-        print("Multiple Verisons Found -> " + str(versions))
-        raise(VersionException(Exception))
+    config_file_exists, cfg_components = get_config(args.config_file)
+    for component in cfg_components:
+        if config_file_exists:
+                while component.paths:
+                    filetype = get_filetype_object(args, component.paths)
+                    # add version to unique set
+                    versions.add(str(filetype.version_number))
+                    component.paths.pop(0)
+                if len(versions) == 1:
+                    versions.clear()
+                    continue
+                else:
+                    print("Multiple Verisons Found -> " + str(versions))
+                    raise(VersionException(Exception))
+            
+    return 1
+    
 
 
 def print_dry(args, target_files, versions):
@@ -161,7 +167,6 @@ def print_versions(args, target_files, versions):
         for component in cfg_components:
             print("Component -> [" + component.name + "]")
             if config_file_exists:
-                versions.clear()
                 filetype = get_filetype_object(args, component.paths)
                 print("Current version = " + str(filetype.version_number))
 
