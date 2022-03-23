@@ -24,7 +24,7 @@ def extant_file(x):
 
 def parse_args(argsv):
     """ Parse arguments and return them. """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument(
         "--display-versions",
         required=False,
@@ -38,7 +38,9 @@ def parse_args(argsv):
                 file with the name: \".bump.cfg\" in the current directory \
                 and use it",
     )
-    args = parser.parse_known_args()
+    parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
+                        help='Show this help message and exit.')
+    args = parser.parse_known_args(argsv)
 
     if not args[0].display_versions:
         parser = argparse.ArgumentParser()
@@ -84,11 +86,11 @@ def parse_args(argsv):
             required=False,
             help="A component, defined in the config file, of which to bump"
         )
-
+        
         args = parser.parse_args(argsv)
     else:
         return args[0]
-
+    
     return args
 
 
@@ -210,7 +212,7 @@ def main(argsv=None):
 
     # Parse command line arguments
     args = parse_args(argsv)
-
+    
     # Create list of found versions (length should be == 1)
     versions = set()
 
