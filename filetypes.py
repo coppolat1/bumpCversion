@@ -10,7 +10,7 @@ class SemanticVersionNumber(object):
         self.minor = minor
         self.patch = patch
 
-    def bump(self, part, dont_reset):
+    def bump(self, part, reset):
         """Bump a semantic version number
 
         part  -- The part to bump
@@ -24,7 +24,7 @@ class SemanticVersionNumber(object):
         elif (part == 'patch'):
             self.patch += 1
 
-        if (not dont_reset):
+        if reset:
             if (part == 'major'):
                 self.minor = 0
                 self.patch = 0
@@ -41,8 +41,8 @@ class SemanticVersionNumber(object):
 
 class Filetype(object):
 
-    def __init__(self, args, target_file):
-        self.args = args
+    def __init__(self, target_file):
+        
         self.target_file = target_file
         self.version_number = SemanticVersionNumber(0, 0, 0)
         self.get_version_from_file()

@@ -1,26 +1,23 @@
 import pytest
-from bumpCversion import main, parse_args
+from typer.testing import CliRunner
+from bumpCversion import app
 
 
-@pytest.fixture
-def my_parser():
-    return parse_args("--dry-run")
+runner = CliRunner()
 
-@pytest.mark.parametrize("option", ("-h", "--help"))
-def test_help(capsys, option):
-    try:
-        main([option])
-    except SystemExit:
-        pass
-    output = capsys.readouterr().out
-    assert "usage" in output
+@pytest.fixture(name='doxydir')
+def doxydir():
+    with open('./tests/test_version/Doxyfile', 'r', errors="ignore",encoding='utf-8', newline= '') as input:
+        content = input.read()
+    return content
+    
+def test_dry():
+    result = runner.invoke(
+        app, ["dry-run", "./sample_files/.bump.cfg", "naibsp", "minor", "True"])
+    assert result.exit_code == 0
+    assert "Current version" in result.stdout
+
+def test_doxy(doxydir):
+    assert 'PROJECT_NAME' in doxydir
 
 
-# @pytest.mark.parametrize("dryrun", (None, "--dry-run"))
-# def test_arg(capsys, dryrun):
-#     print_dry()
-#     output = capsys.readouterr()
-#     assert "Current version =" in output
-
-# def test_something():
-#         assert "Current" in my_parser
