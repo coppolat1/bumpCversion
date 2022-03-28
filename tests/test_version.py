@@ -2,7 +2,7 @@ import pytest
 from typer.testing import CliRunner
 from bumpCversion import app
 from filetypes import SemanticVersionNumber
-
+# import magic
 
 runner = CliRunner()
 
@@ -12,20 +12,29 @@ def doxydir():
         content = input.read()
     return content
 
+# @pytest.fixture(name='doxyfile')
+# def doxyfile():
+#     ret_val = magic.from_file('Doxyfile')
+#     return ret_val
+
 @pytest.fixture(name='version_num')
 def version_num():
     version = SemanticVersionNumber(1, 2, 3)
     return version
-    
+
+
 def test_dry():
     result = runner.invoke(
-        app, ["dry-run", "./sample_files/.bump.cfg", "naibsp", "minor", "True"])
+        app, ["dry-run", "./sample_files/.bump.cfg", "naibsp", "minor"])
     assert result.exit_code == 0
     assert "Current version" in result.stdout
 
-def test_doxy_exists(doxydir):
-    # assert 'PROJECT_NAME' in doxydir
-    assert doxydir
+# def test_doxy_type(doxyfile):
+#     x = 0
+#     assert x == 0
+
+def test_doxy_vaild(doxydir):
+    assert 'PROJECT_NAME' in doxydir
 
 def test_version(version_num):
     assert version_num.major == 1
