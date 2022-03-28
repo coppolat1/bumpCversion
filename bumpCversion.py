@@ -48,7 +48,7 @@ def bump(config: str = typer.Argument(
         ..., help="A component defined in the config file, of which to bump"),
         part: str = typer.Argument(
         ..., help="Part to bump: major, minor, patch"),
-        reset: bool = typer.Argument(
+        reset: bool = typer.Option(
         False, help="Reset the patch and/or minor to zero when bumping the \
             higher parts")):
     """
