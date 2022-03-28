@@ -21,7 +21,10 @@ target_files = []
 
 
 @app.command()
-def display_version(config: str):
+def display_version(config: str = typer.Argument(
+        ..., help="Configuration file to read from. If this argument is \
+            not supplied the program will check for the existence of a \
+            configuration file in the CWD")):
     """
     Print out all components respective versions
     """
@@ -30,7 +33,17 @@ def display_version(config: str):
 
 
 @app.command()
-def dry_run(config: str, component: str, part: str, reset: bool):
+def dry_run(config: str = typer.Argument(
+        ..., help="Configuration file to read from. If this argument is \
+            not supplied the program will check for the existence of a \
+            configuration file in the CWD"),
+        component: str = typer.Argument(
+        ..., help="A component defined in the config file, of which to bump"),
+        part: str = typer.Argument(
+        ..., help="Part to bump: major, minor, patch"),
+        reset: bool = typer.Option(
+        False, help="Reset the patch and/or minor to zero when bumping the \
+            higher parts")):
     """
     Print out current and expected versions (without modifying files)
     """
