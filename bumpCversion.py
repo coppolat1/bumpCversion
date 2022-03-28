@@ -40,7 +40,17 @@ def dry_run(config: str, component: str, part: str, reset: bool):
 
 
 @app.command()
-def bump(config: str, component: str, part: str, reset: bool):
+def bump(config: str = typer.Argument(
+        ..., help="Configuration file to read from. If this argument is \
+            not supplied the program will check for the existence of a \
+            configuration file in the CWD"),
+        component: str = typer.Argument(
+        ..., help="A component defined in the config file, of which to bump"),
+        part: str = typer.Argument(
+        ..., help="Part to bump: major, minor, patch"),
+        reset: bool = typer.Argument(
+        False, help="Reset the patch and/or minor to zero when bumping the \
+            higher parts")):
     """
     Bump version numbers from files specified in config
     """
