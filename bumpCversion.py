@@ -171,7 +171,7 @@ def valid_version_congruence(config, versions):
                 print("Multiple Verisons Found -> " + str(versions))
                 raise(VersionException(Exception))
 
-    return 1
+    return True
 
 
 def print_dry(config, component, part, target_files, reset, versions):

@@ -15,7 +15,7 @@
  * Major version MUST be incremented if any backwards incompatible changes are introduced to the public API. It MAY also include
  * minor and patch level changes. Patch and minor version MUST be reset to 0 when major version is incremented.
  */
-#define LIBNAME_VERSION_MAJOR        (15U)
+#define LIBNAME_VERSION_MAJOR        (21U)
 
 /*
  * Minor Version
@@ -33,7 +33,7 @@
  * It MAY be incremented if substantial new functionality or improvements are introduced within the private code.
  * It MAY include patch level changes. Patch version MUST be reset to 0 when minor version is incremented.
  */
-#define LIBNAME_VERSION_MINOR        (4U)
+#define LIBNAME_VERSION_MINOR        (0U)
 
 /*
  * Patch Version
