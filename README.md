@@ -7,21 +7,41 @@ Development of a CLI version bump utility. Given a file containing some version 
 ## Usage
 An exe is located in the `.\bin` folder.
 ```
-usage: bumpCversion.py [-h] [--config-file CONFIG_FILE] [--dry-run] [--dont-reset] [--component COMPONENT] [version-file] {major,minor,patch}
+$ python bumpCversion.py --help
+Usage: bumpCversion.py [OPTIONS] COMMAND [ARGS]...
 
-positional arguments:
-  version-file          File that contains C library version information
-  {major,minor,patch}   Part of the version to be bumped (major|minor|patch)
+Options:
+  --install-completion [bash|zsh|fish|powershell|pwsh]
+                                  Install completion for the specified shell.
+  --show-completion [bash|zsh|fish|powershell|pwsh]
+                                  Show completion for the specified shell, to
+                                  copy it or customize the installation.
+  --help                          Show this message and exit.
 
-optional arguments:
-  -h, --help            show this help message and exit
-  --config-file CONFIG_FILE
-                        Config file to read from. If this argument is not supplied the program will check for the existence of a configuration file      
-                        with the name: ".bump.cfg" in the current directory and use it
-  --dry-run             Print out current and expected versions (without modifying files)
-  --dont-reset          Don't reset the patch and/or minor to zero when bumping the major or minor versions
-  --component COMPONENT
-                        A component, defined in the config file, of which to bumpp
+Commands:
+  bump             Bump version numbers from files specified in config
+  display-version  Print out all components respective versions
+  dry-run          Print out current and expected versions (without...
+```
+Specify a `Command` followed by `--help` to see usage:
+```
+$ python bumpCversion.py bump --help
+Usage: bumpCversion.py bump [OPTIONS] CONFIG COMPONENT PART
+
+  Bump version numbers from files specified in config
+
+Arguments:
+  CONFIG     Configuration file to read from. If this argument is
+             not supplied the program will check for the existence of a
+             configuration file in the CWD  [required]
+  COMPONENT  A component defined in the config file, of which to bump
+             [required]
+  PART       Part to bump: major, minor, patch  [required]
+
+Options:
+  --reset / --no-reset  Reset the patch and/or minor to zero when bumping the
+                        higher parts  [default: no-reset]
+  --help                Show this message and exit.
 ```
 Example config file :
 ```
