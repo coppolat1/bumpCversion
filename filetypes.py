@@ -42,7 +42,7 @@ class SemanticVersionNumber(object):
 class Filetype(object):
 
     def __init__(self, target_file):
-        
+
         self.target_file = target_file
         self.version_number = SemanticVersionNumber(0, 0, 0)
         self.get_version_from_file()
@@ -131,7 +131,8 @@ class PreProcessor(Filetype):
 
 class Doxy(Filetype):
     #   Define regex patterns
-    r_pattern = r"PROJECT_NUMBER\s*=\s*(?P<major>\d+)\.(?P<minor>\d+)?\.(?P<patch>\*|\d+)"
+    r_pattern = r"PROJECT_NUMBER(?P<n_spaces>\s*)=\s*(?P<major>\d+)\.(?P<minor>\d+)?\.(?P<patch>\*|\d+)"
+    num_spaces = ''
 
     # initializes version based off regex
     def get_version_from_file(self):
@@ -144,6 +145,7 @@ class Doxy(Filetype):
         matchObj = re.search(self.r_pattern, content)
 
         try:
+            self.num_spaces = matchObj.group('n_spaces')
             major_val = matchObj.group('major')
             minor_val = matchObj.group('minor')
             patch_val = matchObj.group('patch')
@@ -170,7 +172,9 @@ class Doxy(Filetype):
             input.write(content)
 
     def __build_replacement_string(self, new_version):
-        return('PROJECT_NUMBER = ' +
+        return('PROJECT_NUMBER' +
+               self.num_spaces +
+               '= ' +
                str(new_version.major) + '.' +
                str(new_version.minor) + '.' +
                str(new_version.patch))
