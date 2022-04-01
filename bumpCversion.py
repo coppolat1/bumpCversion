@@ -1,5 +1,5 @@
 import os
-import argparse
+import typer
 import configparser
 from exceptions import FileNotSupportedException, VersionException
 from filetypes import Doxy, PreProcessor
@@ -11,60 +11,97 @@ class ConfigStruct(NamedTuple):
     paths: list
 
 
-def extant_file(x):
+app = typer.Typer()
+
+# Create list of found versions (length should be == 1)
+versions = set()
+
+# Get file we're interested in
+target_files = []
+
+
+@app.command()
+def display_version(config: str = typer.Argument(
+        ..., help="Configuration file to read from. If this argument is \
+            not supplied the program will check for the existence of a \
+            configuration file in the CWD")):
     """
-    'Type' for argparse - checks that file exists but does not open.
+    Print out all components respective versions
     """
-    if not os.path.exists(x):
-        # Argparse uses the ArgumentTypeError to give a rejection message like:
-        # error: argument input: x does not exist
-        raise argparse.ArgumentTypeError("{0} does not exist".format(x))
-    return x
+    if os.path.exists(config):
+        print_versions(config, versions)
 
 
-def parse_args():
-    """ Parse arguments and return them. """
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--config-file",
-        required=False,
-        help="Config file to read from. If this argument is not supplied \
-              the program will check for the existence of a configuration \
-              file with the name: \".bump.cfg\" in the current directory \
-              and use it",
-    )
-    parser.add_argument(
-        "version_file", metavar="version-file",
-        nargs='?',
-        type=extant_file,
-        help="File that contains C library version information",
-        default=None
-        #help="File to change"
-    )
-    parser.add_argument(
-        "--dry-run",
-        action='store_true',
-        help="Print out current and expected versions (without modifying files)"
-    )
-    parser.add_argument(
-        "part",
-        choices=['major', 'minor', 'patch'],
-        help="Part of the version to be bumped (major|minor|patch)"
-    )
-    parser.add_argument(
-        "--dont-reset",
-        action='store_true',
-        help=("Don't reset the patch and/or minor to zero when bumping the"
-              " major or minor versions")
-    )
-    parser.add_argument(
-        "--component",
-        required=False,
-        help="A component, defined in the config file, of which to bump"
-    )
-    args = parser.parse_args()
+@app.command()
+def dry_run(config: str = typer.Argument(
+        ..., help="Configuration file to read from. If this argument is \
+            not supplied the program will check for the existence of a \
+            configuration file in the CWD"),
+        component: str = typer.Argument(
+        ..., help="A component defined in the config file, of which to bump"),
+        part: str = typer.Argument(
+        ..., help="Part to bump: major, minor, patch"),
+        reset: bool = typer.Option(
+        False, help="Reset the patch and/or minor to zero when bumping the \
+            higher parts")):
+    """
+    Print out current and expected versions (without modifying files)
+    """
+    if os.path.exists(config):
+        target_files = get_target_files(config, component)
+        print_dry(config, component, part, target_files, reset, versions)
 
-    return args
+
+@app.command()
+def bump(config: str = typer.Argument(
+        ..., help="Configuration file to read from. If this argument is \
+            not supplied the program will check for the existence of a \
+            configuration file in the CWD"),
+        component: str = typer.Argument(
+        ..., help="A component defined in the config file, of which to bump"),
+        part: str = typer.Argument(
+        ..., help="Part to bump: major, minor, patch"),
+        reset: bool = typer.Option(
+        False, help="Reset the patch and/or minor to zero when bumping the \
+            higher parts")):
+    """
+    Bump version numbers from files specified in config
+    """
+
+    # Check to see if version number is the same across all files
+    print("Checking component [" + str(component) +
+          "] for verison number congruence...\n")
+
+    if os.path.exists(config) and valid_version_congruence(config, versions):
+
+        target_files = get_target_files(config, component)
+
+        while target_files:
+
+            print("Checking component [" +
+                  str(component) + "] for file type...")
+
+            # Creates object representing first file from `target_files`, then pops it off list
+            filetype = get_filetype_object(target_files)
+
+            # Print file were working with
+            print("Target file: " + target_files[0])
+
+            # Print version, before we bump it
+            print("Pre-bump string:  ", filetype.version_number)
+
+            # Bump filetype object local variable of version
+            print("Bumping " + str(part) + "...")
+            filetype.version_number.bump(part, reset)
+
+            # Overwrite file based on filetype objects fields
+            filetype.update_version_in_file()
+
+            # Print version, after we bump it
+            print("Post-bump string:  ", filetype.version_number, '\n')
+
+            # Pop `target_files` until out of files
+            target_files.pop(0)
 
 
 def get_config(config_file):
@@ -94,127 +131,90 @@ def get_config(config_file):
     return config_file_exists, components
 
 
-def get_target_files(args):
+def get_target_files(config, component):
     """
     If a version file was specified on the CLI, use it. Otherwise, look for a configuration file.
     """
     target_files = []
-    if args.version_file:
-        target_files.append(args.version_file)
-        return target_files
-    else:
-        config_file_exists, cfg_components = get_config(args.config_file)
 
-        if not config_file_exists:
-            print("Nothing to do, configuration does not exist!")
-            return
+    config_file_exists, cfg_components = get_config(config)
 
-        for comp in cfg_components:
-            if args.component == comp.name:
-                print("\nUsing component:", comp.name + '\n')
-                for path in comp.paths:
-                    target_files.append(path)
+    if not config_file_exists:
+        print("Nothing to do, configuration does not exist!")
+        return
+
+    for comp in cfg_components:
+        if component == comp.name:
+            print("\nUsing component:", comp.name + '\n')
+            for path in comp.paths:
+                target_files.append(path)
 
     return target_files
 
-def valid_version_congruence(args, target_files, versions):
+
+def valid_version_congruence(config, versions):
     """
-    Check to see if version number is the same across all files.
+    Check to see if version number is the same across all files per component.
     """
-    while target_files:
-        filetype = get_filetype_object(args, target_files)
-        # add version to unique set
-        versions.add(str(filetype.version_number))
-        target_files.pop(0)
+    config_file_exists, cfg_components = get_config(config)
+    for component in cfg_components:
+        if config_file_exists:
+            while component.paths:
+                filetype = get_filetype_object(component.paths)
+                # add version to unique set
+                versions.add(str(filetype.version_number))
+                component.paths.pop(0)
+            if len(versions) == 1:
+                versions.clear()
+                continue
+            else:
+                print("Multiple Verisons Found -> " + str(versions))
+                raise(VersionException(Exception))
 
-    if len(versions) == 1:
-        return 1
-    else:
-        print("Multiple Verisons Found -> " + str(versions))
-        raise(VersionException(Exception))
+    return True
 
 
-def print_dry(args, target_files, versions):
+def print_dry(config, component, part, target_files, reset, versions):
     """
     Print expected bump value of version found from first target file.
     """
-    if valid_version_congruence(args, target_files.copy(), versions):
-        print("--dry-run output: ")
+    if valid_version_congruence(config, versions):
         if target_files:
-            filetype = get_filetype_object(args, target_files)
+            filetype = get_filetype_object(target_files)
             print("Current version = " + str(filetype.version_number))
-            filetype.version_number.bump(args.part, args.dont_reset)
+            filetype.version_number.bump(part, reset)
             print("Expected version post-bump = " +
                   str(filetype.version_number) + "\n")
 
 
-def get_filetype_object(args, target_files):
+def print_versions(config, versions):
+    """
+    Print expected bump value of version found from first target file.
+    """
+    if valid_version_congruence(config, versions):
+        config_file_exists, cfg_components = get_config(config)
+        for component in cfg_components:
+            if config_file_exists:
+                filetype = get_filetype_object(component.paths)
+                print("Component: [" + component.name + "]" +
+                      " -> " + str(filetype.version_number))
+
+
+def get_filetype_object(target_files):
     """
     Return the object representing the filetype.
     """
     for file in target_files:
         if "Doxyfile" in file:
-            filetype = Doxy(args, file)
+            filetype = Doxy(file)
             return filetype
         elif file.endswith('.h'):
-            filetype = PreProcessor(args, file)
+            filetype = PreProcessor(file)
             return filetype
         else:
             raise(FileNotSupportedException(Exception))
     return filetype
 
 
-def main():
-
-    # Parse command line arguments
-    args = parse_args()
-
-    # Users desired part (major, minor, or patch) to bump
-    part_to_bump = args.part
-
-    # Get file we're interested in
-    target_files = get_target_files(args)
-
-    # Create list of found versions (length should be == 1)
-    versions = set()
-
-    # Check for dry run
-    if args.dry_run:
-        print_dry(args, target_files.copy(), versions)
-        exit()
-
-    # Check to see if version number is the same across all files
-    print("Checking component [" + str(args.component) +
-          "] for verison number congruence...\n")
-    valid_version_congruence(args, target_files.copy(), versions)
-
-    while target_files:
-
-        print("Checking component [" +
-              str(args.component) + "] for file type...")
-
-        # Creates object representing first file from `target_files`, then pops it off list
-        filetype = get_filetype_object(args, target_files)
-
-        # Print file were working with
-        print("Target file: " + target_files[0])
-
-        # Print version, before we bump it
-        print("Pre-bump string:  ", filetype.version_number)
-
-        # Bump filetype object local variable of version
-        print("Bumping " + str(args.part) + "...")
-        filetype.version_number.bump(part_to_bump, args.dont_reset)
-
-        # Overwrite file based on filetype objects fields
-        filetype.update_version_in_file()
-
-        # Print version, after we bump it
-        print("Post-bump string:  ", filetype.version_number, '\n')
-
-        # Pop `target_files` until out of files
-        target_files.pop(0)
-
-
 if __name__ == '__main__':
-    main()
+    app()

@@ -1,5 +1,6 @@
 __pycache__/
 
-tests/Doxyfile
-tests/sample-input-file.h
-tests/sample-input-file1.h
+sample_files/Doxyfile
+sample_files/sample-input-file.h
+sample_files/sample-input-file1.h
+

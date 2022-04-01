@@ -13,7 +13,7 @@
          "args": [
             "--dry-run",
             "--config-file",
-            "./tests/.bump.cfg",
+            "./sample_files/.bump.cfg",
             "--component",
             "naibrd",
             "major"
@@ -27,10 +27,25 @@
          "console": "integratedTerminal",
          "args": [
             "--config-file",
-            "./tests/.bump.cfg",
+            "./sample_files/.bump.cfg",
             "--component",
             "naibrd",
             "major"
+         ]
+      },
+      {
+         "name": "Bump display versions naibsp patch",
+         "type": "python",
+         "request": "launch",
+         "program": "bumpCversion.py",
+         "console": "integratedTerminal",
+         "args": [
+            "--display-versions",
+            "--config-file",
+            "./sample_files/.bump.cfg",
+            "--component",
+            "naibsp",
+            "patch"
          ]
       }
    ]
