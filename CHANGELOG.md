@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
-## [0.8.0] - 2022-03-18
+## [1.0.0] - 2022-03-18
 ### Added
 - Typer library
 - Unit tests (pytest)
