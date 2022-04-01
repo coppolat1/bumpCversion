@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning].
 
 ## [0.8.0] - 2022-03-18
 ### Added
+- Typer library
+- Unit tests (pytest)
+
+## [0.8.0] - 2022-03-18
+### Added
 - Version congruence check if component has multiple files
 - `--dry-run` option
 
